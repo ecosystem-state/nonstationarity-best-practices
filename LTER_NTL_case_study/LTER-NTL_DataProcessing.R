@@ -15,9 +15,9 @@ cis <- NA
 ci_func <- function(data,column) {
   for(i in 1:length(years)){
     temp<-data%>%filter(year4==years[i])
-    ci_annual_lwr=t.test(temp$column)$conf.int[1]
-    ci_annual_upr=t.test(temp$column)$conf.int[2]
-    cis_temp<-cbind(year=years[i],ci_annual_lwr,ci_annual_upr)
+    ci_sec_lwr=t.test(temp$column)$conf.int[1]
+    ci_sec_upr=t.test(temp$column)$conf.int[2]
+    cis_temp<-cbind(year=years[i],ci_sec_lwr,ci_sec_upr)
     cis<-rbind(cis,cis_temp)
   }
 }
@@ -51,17 +51,17 @@ ggplot(data = pred_secchi_dat, aes(x = year4, y = fit)) +
 cis <- NA
 for(i in 1:length(years)){
   secchi_temp<-secchi_TR%>%filter(year4==years[i])
-  ci_annual_lwr=t.test(secchi_temp$secviewMean)$conf.int[1]
-  ci_annual_upr=t.test(secchi_temp$secviewMean)$conf.int[2]
-  cis_temp<-cbind(year=years[i],ci_annual_lwr,ci_annual_upr)
+  ci_sec_lwr=t.test(secchi_temp$secviewMean)$conf.int[1]
+  ci_sec_upr=t.test(secchi_temp$secviewMean)$conf.int[2]
+  cis_temp<-cbind(year=years[i],ci_sec_lwr,ci_sec_upr)
   cis<-rbind(cis,cis_temp)
 }
 
 secchi_TR_summary<-secchi_TR%>%  
   group_by(year4)%>%
-  summarise(mean_annual=mean(secviewMean), sd_annual=sd(secviewMean))%>%
+  summarise(mean_sec=mean(secviewMean), sd_sec=sd(secviewMean))%>%
   cbind(na.omit(cis))
-secchi.plot <- ggplot(data =secchi_TR_summary, aes(x = year4, y = mean_annual)) +
+secchi.plot <- ggplot(data =secchi_TR_summary, aes(x = year4, y = mean_sec)) +
   #  geom_ribbon(alpha=0.2,linetype = 0,aes(ymin=ln.sr-sr.CV*ln.sr, ymax=ln.sr+sr.CV*ln.sr,lwd=0))+
   geom_point(size=0.75)+
   ylim(c(3,7.5))+
@@ -69,7 +69,7 @@ secchi.plot <- ggplot(data =secchi_TR_summary, aes(x = year4, y = mean_annual)) 
   ylab("Secchi depth (m)")+
   xlab("Year")+
   geom_smooth(span=0.2, col='black', lwd=.25)+
-  geom_errorbar(aes(ymin=ci_annual_lwr,ymax=ci_annual_upr))
+  geom_errorbar(aes(ymin=ci_sec_lwr,ymax=ci_sec_upr))
 secchi.plot
 
 ##### Dissolved Reactive Silica #####
@@ -83,17 +83,17 @@ cis <- NA
 years<-unique(chemistry_TR$year4)
 for(i in 2:length(years)){
   chemistry_temp<-chemistry_TR%>%filter(year4==years[i])
-  ci_annual_lwr=t.test(chemistry_temp$drsif)$conf.int[1]
-  ci_annual_upr=t.test(chemistry_temp$drsif)$conf.int[2]
-  cis_temp<-cbind(year=years[i],ci_annual_lwr,ci_annual_upr)
+  ci_drsif_lwr=t.test(chemistry_temp$drsif)$conf.int[1]
+  ci_drsif_upr=t.test(chemistry_temp$drsif)$conf.int[2]
+  cis_temp<-cbind(year=years[i],ci_drsif_lwr,ci_drsif_upr)
   cis<-rbind(cis,cis_temp)
 }
 
 chemistry_TR_summary<-chemistry_TR%>%  
   group_by(year4)%>%
-  summarise(mean_annual=mean(drsif), sd_annual=sd(drsif))%>%
+  summarise(mean_drsif=mean(drsif), sd_drsif=sd(drsif))%>%
   cbind(cis)
-drsf.plot <- ggplot(data =chemistry_TR_summary, aes(x = year4, y = mean_annual)) +
+drsf.plot <- ggplot(data =chemistry_TR_summary, aes(x = year4, y = mean_drsif)) +
   #  geom_ribbon(alpha=0.2,linetype = 0,aes(ymin=ln.sr-sr.CV*ln.sr, ymax=ln.sr+sr.CV*ln.sr,lwd=0))+
   geom_point(size=0.75)+
   #ylim(c(3,7.5))+
@@ -101,8 +101,40 @@ drsf.plot <- ggplot(data =chemistry_TR_summary, aes(x = year4, y = mean_annual))
   ylab(expression(paste('Dissolved Reactive Silica (filtered) ('~mu, "g L"^"-1",")")))+
   xlab("Year")+
   geom_smooth(span=0.2, col='black', lwd=.25)+
-  geom_errorbar(aes(ymin=ci_annual_lwr,ymax=ci_annual_upr))
+  geom_errorbar(aes(ymin=ci_drsif_lwr,ymax=ci_drsif_upr))
 drsf.plot
 
 
 ##### Chlorophyll #####
+chl <- read.csv("LTER_NTL_case_study/NTL-LTER-TroutLake/NTL_LTER_TroutLake_ChlA.csv")
+chl_TR<-chl%>%
+  filter(lakeid=="TR", depth==0.0)%>%
+  select(year4, daynum, sampledate, depth, rep, sta,chlor)%>% 
+  filter_at(vars(chlor),all_vars(!is.na(.))) #removing where there are no observations (both NAs))
+###### plotting raw data ######
+cis <- NA
+years<-unique(chl_TR$year4)
+for(i in 1:length(years)){
+  chl_temp<-chl_TR%>%filter(year4==years[i])
+  ci_chl_lwr=t.test(chl_temp$chlor)$conf.int[1]
+  ci_chl_upr=t.test(chl_temp$chlor)$conf.int[2]
+  cis_temp<-cbind(year=years[i],ci_chl_lwr,ci_chl_upr)
+  cis<-rbind(cis,cis_temp)
+}
+
+chl_TR_summary<-chl_TR%>%  
+  group_by(year4)%>%
+  summarise(mean_chl=mean(chlor), sd_chl=sd(chlor))%>%
+  cbind(na.omit(cis))
+chl.plot <- ggplot(data =chl_TR_summary, aes(x = year4, y = mean_chl)) +
+  #  geom_ribbon(alpha=0.2,linetype = 0,aes(ymin=ln.sr-sr.CV*ln.sr, ymax=ln.sr+sr.CV*ln.sr,lwd=0))+
+  geom_point(size=0.75)+
+  #ylim(c(3,7.5))+
+  ggtitle("Silica (Datiom Indicator)")+
+  ylab(expression(paste('Dissolved Reactive Silica (filtered) ('~mu, "g L"^"-1",")")))+
+  xlab("Year")+
+  geom_smooth(span=0.2, col='black', lwd=.25)+
+  geom_errorbar(aes(ymin=ci_chl_lwr,ymax=ci_chl_upr))
+chl.plot
+
+
