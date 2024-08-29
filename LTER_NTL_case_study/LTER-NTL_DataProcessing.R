@@ -76,6 +76,10 @@ secchi.plot
 
 ##### Dissolved Reactive Silica #####
 chemistry <- read.csv("LTER_NTL_case_study/NTL-LTER-TroutLake/NTL_LTER_TroutLake_Chemistry.csv")
+
+head(chemistry)
+
+
 chemistry_TR<-chemistry%>%
   filter(lakeid=="TR", depth==0.0)%>%
   select(year4, daynum, sampledate, depth, rep, sta,drsif)%>% 
@@ -95,6 +99,8 @@ chemistry_TR_summary<-chemistry_TR%>%
   group_by(year4)%>%
   summarise(mean_drsif=mean(drsif), sd_drsif=sd(drsif))%>%
   cbind(cis)
+
+
 drsf.plot <- ggplot(data =chemistry_TR_summary, aes(x = year4, y = mean_drsif)) +
   #  geom_ribbon(alpha=0.2,linetype = 0,aes(ymin=ln.sr-sr.CV*ln.sr, ymax=ln.sr+sr.CV*ln.sr,lwd=0))+
   geom_point(size=0.75)+
@@ -284,7 +290,45 @@ CPUE.plot<-ggplot(data =CPUE_TR, aes(x = year4, y = CPUE)) +
   geom_vline(xintercept=2014, lty=2)
 
 
+##### Data Compilation #####
+years<-seq(1981, 2014, 1)
+Nitrogen_TR<-chemistry%>%
+  mutate(date = lubridate::ymd(sampledate)) %>% 
+  dplyr::mutate(year = lubridate::year(sampledate), 
+                month = lubridate::month(sampledate), 
+                day = lubridate::day(sampledate))%>%
+  filter(lakeid=="TR", depth==0.0, month>3&month<9)%>%
+  select(year4, daynum, sampledate, depth, rep, sta,totnf,no3no2,nh4,totpuf)%>% 
+  filter_at(vars(totnf),all_vars(!is.na(.)))%>%  
+  group_by(year4)%>%
+  summarise(mean_totnf=mean(totnf), mean_no3no2=mean(no3no2),mean_nh4=mean(nh4),mean_totpuf=mean(totpuf))
+full_data<-secchi_TR_summary%>%
+  left_join(chemistry_TR_summary)%>%
+  left_join(chl_TR_summary)%>%
+ left_join(Nitrogen_TR)%>%
+ left_join(pivot_wider(zoop_TR_summary%>%
+                        group_by(year4, Type)%>%
+                        summarise(mean_zoop_type=mean(mean_zoop)),
+            names_from = Type, values_from = mean_zoop_type))%>%
+  left_join(pivot_wider(zoop_TR_summary%>%filter(Type=='Large')%>%
+                          group_by(year4, Group)%>%
+                          summarise(mean_zoop_type=mean(mean_zoop)),
+                        names_from = Group, values_from = mean_zoop_type))%>%
+    left_join(pivot_wider(acoustic_TR_summary%>%
+                        group_by(year4, species)%>%
+                        summarise(mean_acoustic_species=mean(mean_acoustic)),
+                      names_from = species, values_from = mean_acoustic_species))%>%
+  mutate(period=as.factor(ifelse(year4<2007,1,
+                       ifelse(year4>2014,3,2))))%>%
+  left_join(filter(pred_TR_summary,Group=="BYTHOTREPHES")%>%ungroup()%>%
+              add_row(data.frame(year4=years, 
+                                 Group=rep("BYTHOTREPHES", length(years)), 
+                                 mean_pred=rep(0, length(years)), 
+                                 sd_pred=rep(0, length(years)))))
 
+full_data[is.na(full_data)] <- 0
+
+saveRDS(full_data, file = "NTL_LTER_TL_data.rds")
 ##### writing full plots and datasets ####
 pdf(file = "LTER_NTL_case_study/NTL_LTER_TSplots.pdf",  
     width = 6,
@@ -298,3 +342,56 @@ ggarrange( acoustic.plot,
 dev.off()
 
 
+#### Exploratory Period Models #### 
+colnames(full_data)
+summary(lm(mean_sec~Large*as.factor(period), data=full_data))
+summary(lm(mean_sec~Small*as.factor(period), data=full_data))
+summary(lm(Large~Small*as.factor(period), data=full_data))
+
+summary(lm(mean_chl~Large*as.factor(period), data=full_data))
+summary(lm(mean_chl~Small*as.factor(period), data=full_data))
+summary(lm(mean_sec~mean_chl*as.factor(period), data=full_data))
+summary(lm(mean_chl~scale(mean_totpuf)*as.factor(period), data=full_data))
+summary(lm(mean_sec~scale(mean_totpuf)*as.factor(period), data=full_data))
+
+summary(lm(scale(mean_drsif)~Large*as.factor(period), data=full_data))
+summary(lm(scale(mean_drsif)~Small*as.factor(period), data=full_data))
+summary(lm(mean_sec~scale(mean_drsif)*as.factor(period), data=full_data))
+summary(lm(mean_totpuf~scale(mean_drsif)*as.factor(period), data=full_data))
+summary(lm(mean_chl~as.factor(period), data=full_data))
+
+summary(lm(Large~as.factor(period), data=full_data))
+summary(lm(Small~as.factor(period), data=full_data))
+summary(lm(mean_drsif~as.factor(period), data=full_data))
+
+summary(lm(mean_no3no2~as.factor(period), data=full_data))
+summary(lm(Large~as.factor(period), data=full_data))
+summary(lm(Calanoid~as.factor(period), data=full_data))
+
+
+full_data%>%group_by(period)%>%summarise(meanLARGE=mean(mean_totpuf))
+##### MOdel Fitting ####
+WaterClarity<-lm(scale(mean_sec)~as.factor(period), data=full_data)
+summary(WaterClarity)
+AIC(WaterClarity)#83.4
+
+WC_Large<-lm(mean_sec~Large*as.factor(period), data=full_data)
+summary(WC_Large)
+AIC(WC_Large) #35.99
+
+WC_Large_no<-lm(mean_sec~Large, data=full_data)
+summary(WC_Large_no)
+AIC(WC_Large_no)
+
+Large <- lm(scale(Large)~as.factor(period), data=full_data)
+AIC(Large)
+
+WC_Large<-lm(mean_sec~mean_totpuf+Large*as.factor(period), data=full_data)
+summary(WC_Large)
+AIC(WC_Large) #34
+
+summary(lm(scale(mean_totpuf)~as.factor(period), data=full_data))
+summary(lm(scale(mean_chl)~as.factor(period), data=full_data))
+
+gam1<-gam(mean_sec~s(year4, by=Large,k=10), data=full_data)
+plot(gam1)
