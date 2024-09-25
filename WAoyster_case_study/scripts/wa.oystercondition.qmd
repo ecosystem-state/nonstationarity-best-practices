@@ -1,0 +1,228 @@
+---
+title: "WA Oyster Condition Case Study"
+format: html
+editor: visual
+---
+
+Approach for WA oyster condition data using linear regression models with time periods defined a-priori and temporally structured GAMs.
+
+```{r}
+#| echo: false
+#| include: false
+#| error: false
+#| warning: false
+
+library(ggpubr)
+library(nord)
+library(ggplot2)
+library(dplyr)
+library(stringr)
+library(dplyr)
+library(nord)
+library(tidyr)
+library(data.table)
+library(mgcv)
+library(kableExtra)
+library(knitr)
+library(strucchange)
+library(mgcv)
+
+#setwd("/Users/mary.hunsicker/Desktop/ns oyster example")
+full_data <- read.csv("data/all.oyster.data.csv")
+
+analysis_data<-full_data%>%
+  select(year, spr.oys.trend,spr.pdo,spr.upw, alt.period2)%>%
+  mutate(spr.oys.trend_scale=scale(spr.oys.trend),spr.pdo_scale=scale(spr.pdo), 
+         spr.upw_scale=scale(spr.upw))
+
+#use alt.period instead of period for the following regimes: 1955/1978,1979/1998,1999/2023
+```
+
+First we start with looking at three time periods using linear regression models:
+
+1\. Before 1998/1989\
+2. Between 1988/1989 and 2014/2015\
+3. After 2014/2015
+
+```{r}
+#| echo: false
+#| warning: false
+analysis_long<-analysis_data%>%
+  pivot_longer(!c(year, period), names_to = 'Dataset', values_to='values')
+dataset_names <- list(
+  'spr.oys.trend_scale'="Oyster condition index (summer)",
+  'spr.pdo_scale'="PDO (summer)",
+  'spr.upw_scale'="Upwelling (summer)"
+)
+
+facet_labeller <- function(variable,value){
+  return(dataset_names[value])
+}
+
+ggplot(data=analysis_long%>%
+         filter(Dataset=="spr.oys.trend_scale"|Dataset=="spr.pdo_scale"|
+                  Dataset=="spr.upw_scale"), aes(y=values, x=year, group=Dataset, col=Dataset)) +
+  facet_wrap(~Dataset,nrow=1,labeller=facet_labeller) +
+  geom_hline(yintercept=0)+
+  geom_point()+
+  geom_line()+
+  scale_colour_discrete(labels=facet_labeller)+
+  geom_vline(xintercept=1988, lty=2)+
+  geom_vline(xintercept=2014, lty=2)+
+  xlab("Year")+
+  guides(shape = 'none')
+```
+
+To examine this we start by using intercept only models through time:
+
+1\. Oyster Condition Index\
+2. PDO\
+3. Upwelling
+
+We approach this by fitting a linear model with the a priori time periods as a factor and compare AIC to a single intercept model.
+
+```{r}
+#| echo: false
+
+oys_period<-lm(spr.oys.trend_scale~as.factor(period), data=analysis_data)
+oys_int<-lm(spr.oys.trend_scale~1, data=analysis_data)
+
+pdo_period<-lm(spr.pdo_scale~as.factor(period), data=analysis_data)
+pdo_int<-lm(spr.pdo_scale~1, data=analysis_data)
+
+upw_period<-lm(spr.upw_scale~as.factor(period), data=analysis_data)
+upw_int<-lm(spr.upw_scale~1, data=analysis_data)
+
+
+AIC_table<-data.frame(Variable=c("Oyster condition index (summer)", "PDO (summer)", "Upwelling (summer)"), No.Period.AIC=round(c(AIC(oys_int),AIC(pdo_int),AIC(upw_int)),digits=2),
+                      Period.AIC=round(c(AIC(oys_period),AIC(pdo_period),AIC(upw_period)),digits=2)) #Best.Model=c("Period","Period", "No difference"))
+
+```
+
+We find that oyster condition index is better explained by a model that includes apriori defined time periods improves model fit.
+
+```{r}
+#| echo: false
+
+AIC_table %>%
+  kbl() %>%
+  kable_classic_2(full_width = F)
+```
+
+Next we consider whether there are changing relationships between oyster condition index and PDO by including a slope parameter and its interaction with time period.
+
+```{r}
+#| echo: false
+#| Include: false
+#make a table 
+
+pdo_slope_int<-lm(spr.oys.trend~spr.pdo*as.factor(period), data=full_data)
+upw_slope_int<- lm(spr.oys.trend~spr.upw*as.factor(period), data=full_data)
+
+pdo_slope<-lm(spr.oys.trend~spr.pdo+as.factor(period), data=full_data)
+upw_slope<- lm(spr.oys.trend~spr.upw+as.factor(period), data=full_data)
+
+Interaction<-data.frame(
+  Covariates= c("PDO", "Upwelling"),
+  Period = round(c(AIC(pdo_slope),AIC(upw_slope)), digits=2),
+  Interaction= round(c(AIC(pdo_slope_int),AIC(upw_slope_int)), digits=2)
+)
+
+Interaction %>%
+  kbl() %>%
+  kable_classic_2(full_width = F)
+```
+
+PDO best explains oyster condition index with a time varying relationship. We examine how this relationship changes through time.
+
+```{r}
+#| echo: false
+print("PDO")
+PDOresults<-data.table(coef(summary(pdo_slope_int)), keep.rownames = 'term')
+PDOresults %>%
+  kbl() %>%
+  kable_classic_2(full_width = F)
+
+Fit_pdo<-ggplot(data=analysis_long%>%
+      filter(Dataset=="spr.oys.trend"|
+                Dataset=="spr.pdo_scale")%>%
+                pivot_wider(names_from = Dataset, values_from = values), aes(group=as.factor(period),col=as.factor(period), y=spr.oys.trend,x=spr.pdo_scale)) +
+  stat_smooth(method = "lm")+
+  scale_colour_discrete(labels=c("1955-1988", "1989-2014","2015-2023"))+
+  #scale_colour_discrete(labels=c("1955-1978", "1979-1998","1999-2023"))+
+  geom_point()+
+  ylab("Oyster Condition")+
+  xlab("PDO")
+
+TS_pdo<- ggplot(data=analysis_long%>%
+                   filter(Dataset=="spr.oys.trend_scale"|
+                            Dataset=="spr.pdo_scale"), aes(y=values, x=year, group=Dataset, col=Dataset)) +
+  #facet_wrap(~area1,scales="free_y") +
+  geom_point()+
+  geom_line()+
+  scale_colour_discrete(labels=c("Oyster Condition", "PDO"))+
+  geom_vline(xintercept=1988, lty=2)+
+  geom_vline(xintercept=2014, lty=2)+
+  guides(shape = 'none')+
+  xlab("Year")
+
+TS_pdo
+Fit_pdo
+
+
+
+```
+
+Now we compare the PDO-oyster condition relationship by fitting a linear model and comparing it to s temporally structured gam.
+
+```{r}
+#| echo: false
+
+prediction=data.frame(prediction=predict(pdo_slope_int),year=unique(analysis_long$year))
+ggplot(data=prediction,aes(y=prediction, x=year)) +
+  #facet_wrap(~area1,scales="free_y") +
+  # geom_point()+
+  geom_point(data=analysis_long%>%
+               filter(Dataset=="spr.oys.trend_scale"), aes(y=values, x=year, group=Dataset, col=Dataset))+
+  geom_line()+
+  ggtitle('Linear Model')+
+  geom_vline(xintercept=1988, lty=2)+
+  geom_vline(xintercept=2014, lty=2)+
+  guides(shape = 'none')
+
+y.ts <- ts(data=prediction, frequency=1)
+# fit breakpoint model
+bp.y <- breakpoints(y.ts ~ 1)
+summary(bp.y) 
+prediction[55,] 
+prediction[21,] 
+prediction[53,] 
+
+#Run the GAMs
+gam1<-gam(spr.oys.trend~s(year, by=spr.pdo,k=10), data=full_data)
+#plot(gam1)
+gam2<-gam(spr.oys.trend~s(year,k=10), data=full_data)
+gam3<-gam(spr.oys.trend~s(spr.pdo,k=10), data=full_data)
+
+
+prediction2=data.frame(prediction=predict(gam1),year=unique(analysis_long$year))
+ggplot(data=prediction2,aes(y=prediction, x=year)) +
+  #facet_wrap(~area1,scales="free_y") +
+  #geom_point()+
+  geom_line()+
+  geom_point(data=analysis_long%>%
+               filter(Dataset=="spr.oys.trend_scale"), aes(y=values, x=year, group=Dataset, col=Dataset))+
+  ggtitle('GAM')+
+  geom_vline(xintercept=1988, lty=2)+
+  geom_vline(xintercept=2014, lty=2)+
+  guides(shape = 'none')
+
+y.ts <- ts(data=prediction2, frequency=1)
+# fit breakpoint model
+bp.y <- breakpoints(y.ts ~ 1)
+summary(bp.y) 
+prediction2[21,] #1975
+prediction2[24,] #1978
+prediction2[43,] #1997
+
+```
