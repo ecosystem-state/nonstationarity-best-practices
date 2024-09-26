@@ -1,0 +1,256 @@
+---
+title: "NTL_LTER_TR Case Study"
+format: html
+editor: visual
+---
+
+## 
+
+Approach for running LTER-NTL Trout Lake data using temporally structured GAMs and linear regression models with time periods defined a-priori.
+
+```{r}
+#| echo: false
+#| include: false
+#| error: false
+#| warning: false
+
+library(ggpubr)
+library(nord)
+library(ggplot2)
+library(dplyr)
+library(stringr)
+library(dplyr)
+library(nord)
+library(tidyr)
+library(data.table)
+library(mgcv)
+library(kableExtra)
+library(knitr)
+library(strucchange)
+library(mgcv)
+
+full_data <- readRDS("LTER_NTL_case_study/NTL_LTER_TL_data.rds")
+analysis_data<-full_data%>%
+  select(year4, mean_sec,mean_chl, Large,mean_totpuf,period)%>%
+  mutate(mean_sec_scale=scale(mean_sec),mean_chl_scale=scale(mean_chl), 
+         Large_scale=scale(Large),mean_totpuf_scale=scale(mean_totpuf))
+```
+
+First we start with looking at three time periods using linear regression models:
+1. The historical regime with low water clarity 
+2. A clear water regime where the introduction of Lake Trout into the system from stocking in 2006. 
+3. A novel regime following the introduction of invasive, predatory water flea (*Bythotrephes*) in 2014 which lead to a reversion of water clarity to a less clear state.
+
+To examine this we start by looking at a few key food web conditions using intercept only models through time:
+1. Water clarity
+2. Phosphorus - which impacts water clarity and is a common bottom-up process that could impact water clarity and we examine as an alternative hypothesis to the top down processes of Lake Trout and invasive speceis.
+3. Abundance of large zooplankton *Daphnia* and *Calanoids*
+4. Chlorophyll
+
+```{r}
+#| echo: false
+#| warning: false
+analysis_long<-analysis_data%>%
+pivot_longer(!c(year4,period), names_to = 'Dataset', values_to='values')
+dataset_names <- list(
+  'mean_sec_scale'="Water Clarity",
+  'mean_totpuf_scale'="Total Phosphorus",
+  'mean_chl_scale'="Chlorophyll",
+  'Large_scale'="Large Zooplankton"
+)
+facet_labeller <- function(variable,value){
+  return(dataset_names[value])
+}
+ggplot(data=analysis_long%>%
+         filter(Dataset=="mean_sec_scale"|Dataset=="mean_totpuf_scale"|
+                 Dataset=="mean_chl_scale"| Dataset=="Large_scale"), aes(y=values, x=year4, group=Dataset, col=Dataset)) +
+  facet_wrap(~Dataset,nrow=2,labeller=facet_labeller) +
+  geom_hline(yintercept=0)+
+  geom_point()+
+  geom_line()+
+  scale_colour_discrete(labels=facet_labeller)+
+  geom_vline(xintercept=2007, lty=2)+
+  geom_vline(xintercept=2014, lty=2)+
+  xlab("Year")+
+  guides(shape = FALSE)
+```
+
+We approach this by fitting a linear model with the a priori time periods as a factor and compare AIC to a single intercept model for wach variable.
+
+```{r}
+#| echo: false
+
+WC_period<-lm(mean_sec_scale~as.factor(period), data=analysis_data)
+WC_int<-lm(mean_sec_scale~1, data=analysis_data)
+
+Large_period<-lm(Large_scale~as.factor(period), data=analysis_data)
+Large_int<-lm(Large_scale~1, data=analysis_data)
+
+chl_period<-lm(mean_chl_scale~as.factor(period), data=analysis_data)
+chl_int<-lm(mean_chl_scale~1, data=analysis_data)
+
+phos_period<-lm(mean_totpuf_scale~as.factor(period), data=analysis_data)
+phos_int<-lm(mean_totpuf_scale~1, data=analysis_data)
+
+
+AIC_table<-data.frame(Variable=c("Water Clarity", "Total Phosphorus", "Chlorophyll", "Large Zooplankton"), No.Period.AIC=round(c(AIC(WC_int),AIC(phos_int),AIC(chl_int),AIC(Large_int)),digits=2),
+Period.AIC=round(c(AIC(WC_period),AIC(phos_period),AIC(chl_period),AIC(Large_period)),digits=2), Best.Model=c("Period", "No difference", "Period","Period"))
+
+
+```
+We find that water clarity, chlorophyll, and large zooplankton abundance are all better explained by a model that includes apriori defined time periods improves model fit. 
+
+```{r}
+#| echo: false
+
+AIC_table %>%
+  kbl() %>%
+  kable_classic_2(full_width = F)
+```
+
+We have identified time-varying mean abundance or amount. We see that the relationship between large zooplankton and water clarity, and large zooplankton and chlorophyll, appears to be time-varying. Next we consider whether there are changing relationships between water clarity and these ecosystem dynamics by including a slope parameter and its interaction with time period. 
+
+```{r}
+#| echo: false
+#| Include: false
+#make a table 
+
+zoop_slope_int<-lm(mean_sec~Large*as.factor(period), data=full_data)
+chl_slope_int<- lm(mean_sec~mean_chl*as.factor(period), data=full_data)
+phos_slope_int<- lm(mean_sec~scale(mean_totpuf)*as.factor(period), data=full_data)
+
+zoop_slope<-lm(mean_sec~Large+as.factor(period), data=full_data)
+chl_slope<- lm(mean_sec~mean_chl+as.factor(period), data=full_data)
+phos_slope<- lm(mean_sec~scale(mean_totpuf)+as.factor(period), data=full_data)
+
+Interaction<-data.frame(
+  Covariates= c("Chlorophyll", "Total Phosphorus", "Large Zooplankton"),
+  Period = round(c(AIC(chl_slope),AIC(phos_slope),AIC(zoop_slope)), digits=2),
+  Interaction= round(c(AIC(chl_slope_int),AIC(phos_slope_int),AIC(zoop_slope_int)), digits=2)
+)
+
+Interaction %>%
+  kbl() %>%
+  kable_classic_2(full_width = F)
+
+```
+Both Chlorophyll and Large Zooplankton best explain water clarity with a time varying relationship. We examine how these relationships change through time. 
+
+```{r}
+#| echo: false
+print("Chlorophyll")
+CHLresults<-data.table(coef(summary(chl_slope_int)), keep.rownames = 'term')
+CHLresults %>%
+  kbl() %>%
+  kable_classic_2(full_width = F)
+
+print("Zooplankton")
+zoopresults<-data.table(coef(summary(zoop_slope_int)), keep.rownames = 'term')
+zoopresults %>%
+  kbl() %>%
+  kable_classic_2(full_width = F)
+
+Fit_zoop<-ggplot(data=analysis_long%>%
+         filter(Dataset=="mean_sec"|
+                  Dataset=="Large_scale")%>%
+  pivot_wider(names_from = Dataset, values_from = values), aes(group=period,col=period, y=mean_sec,x=Large_scale)) +
+  stat_smooth(method = "lm")+
+  scale_colour_discrete(labels=c("1980 - 2006", "2007 - 2014", "2014 - 2022"))+
+  geom_point()+
+  ylab("Water Clarity")+
+  xlab("Large Zooplankton")
+
+TS_zoop<- ggplot(data=analysis_long%>%
+         filter(Dataset=="mean_sec_scale"|
+                  Dataset=="Large_scale"), aes(y=values, x=year4, group=Dataset, col=Dataset)) +
+  #facet_wrap(~area1,scales="free_y") +
+  geom_point()+
+  geom_line()+
+  scale_colour_discrete(labels=c("Water Clarity", "Large Zooplankton"))+
+  geom_vline(xintercept=2007, lty=2)+
+  geom_vline(xintercept=2014, lty=2)+
+  guides(shape = FALSE)+
+  xlab("Year")
+
+
+
+Fit_chl <-ggplot(data=analysis_long%>%
+         filter(Dataset=="mean_sec"|
+                  Dataset=="mean_chl_scale")%>%
+  pivot_wider(names_from = Dataset, values_from = values), aes(group=period,col=period, y=mean_sec,x=mean_chl_scale)) +
+  stat_smooth(method = "lm")+
+  scale_colour_discrete(labels=c("1980 - 2006", "2007 - 2014", "2014 - 2022"))+
+  geom_point()+
+  ylab("Water Clarity")+
+  xlab("Chlorophyll")
+
+TS_chl<-ggplot(data=analysis_long%>%
+         filter(Dataset=="mean_sec_scale"|
+                  Dataset=="mean_chl_scale"), aes(y=values, x=year4, group=Dataset, col=Dataset)) +
+  #facet_wrap(~area1,scales="free_y") +
+  geom_point()+
+  geom_line()+
+  scale_colour_discrete(labels=c("Water Clarity", "Chlorophyll"))+
+  geom_vline(xintercept=2007, lty=2)+
+  geom_vline(xintercept=2014, lty=2)+
+  guides(shape = FALSE)+
+  xlab("Year")
+
+TS_zoop
+Fit_zoop
+TS_chl
+Fit_chl
+
+
+
+```
+
+If we take the Zooplankton-water quality relationship and fit a temporally structured gam and compare it to the linear model, we find similar results. Both predictions also acccurately identify 2006 as a breakpoint and a second break point in 2016.
+
+```{r}
+#| echo: false
+
+prediction=data.frame(prediction=predict(zoop_slope_int),year=unique(analysis_long$year4))
+ggplot(data=prediction,aes(y=prediction, x=year)) +
+  #facet_wrap(~area1,scales="free_y") +
+ # geom_point()+
+  geom_point(data=analysis_long%>%
+         filter(Dataset=="mean_sec"), aes(y=values, x=year4, group=Dataset, col=Dataset))+
+  geom_line()+
+  ggtitle('Linear Model')+
+  geom_vline(xintercept=2007, lty=2)+
+  geom_vline(xintercept=2014, lty=2)+
+  guides(shape = FALSE)
+
+y.ts <- ts(data=prediction, frequency=1)
+# fit breakpoint model
+bp.y <- breakpoints(y.ts ~ 1)
+summary(bp.y) 
+prediction[26,]
+prediction[36,]
+gam1<-gam(mean_sec~s(year4, by=Large,k=10), data=full_data)
+#plot(gam1)
+gam2<-gam(mean_sec~s(year4,k=10), data=full_data)
+gam3<-gam(mean_sec~s(Large,k=10), data=full_data)
+
+
+prediction2=data.frame(prediction=predict(gam1),year=unique(analysis_long$year4))
+ggplot(data=prediction2,aes(y=prediction, x=year)) +
+  #facet_wrap(~area1,scales="free_y") +
+  #geom_point()+
+  geom_line()+
+    geom_point(data=analysis_long%>%
+         filter(Dataset=="mean_sec"), aes(y=values, x=year4, group=Dataset, col=Dataset))+
+  ggtitle('GAM')+
+  geom_vline(xintercept=2007, lty=2)+
+  geom_vline(xintercept=2014, lty=2)+
+  guides(shape = FALSE)
+
+y.ts <- ts(data=prediction2, frequency=1)
+# fit breakpoint model
+bp.y <- breakpoints(y.ts ~ 1)
+summary(bp.y) 
+prediction2[26,]
+prediction2[36,]
+
+```
