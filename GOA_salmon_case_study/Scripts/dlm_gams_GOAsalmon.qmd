@@ -78,7 +78,7 @@ ccf(sst, salmon)
 Use a lag of 3 months?
 
 ```{r}
-lag_n <- 4
+lag_n <- 0
 dat2$lagged_sst <- c(rep(NA, lag_n), dat2$z_sst[1:(nrow(dat2)-lag_n)]) 
 dat2 <- dat2[-c(1:lag_n),]
 ```
