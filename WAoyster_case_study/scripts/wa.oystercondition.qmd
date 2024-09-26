@@ -1,6 +1,6 @@
 ---
 title: "WA Oyster Condition Case Study"
-format: html
+format: pdf
 editor: visual
 ---
 
@@ -28,10 +28,10 @@ library(strucchange)
 library(mgcv)
 
 #setwd("/Users/mary.hunsicker/Desktop/ns oyster example")
-full_data <- read.csv("data/all.oyster.data.csv")
+full_data <- read.csv("WAoyster_case_study/data/all.oyster.data.csv")
 
 analysis_data<-full_data%>%
-  select(year, spr.oys.trend,spr.pdo,spr.upw, alt.period2)%>%
+  select(year, spr.oys.trend,spr.pdo,spr.upw, period)%>%
   mutate(spr.oys.trend_scale=scale(spr.oys.trend),spr.pdo_scale=scale(spr.pdo), 
          spr.upw_scale=scale(spr.upw))
 
@@ -194,9 +194,9 @@ y.ts <- ts(data=prediction, frequency=1)
 # fit breakpoint model
 bp.y <- breakpoints(y.ts ~ 1)
 summary(bp.y) 
-prediction[55,] 
-prediction[21,] 
-prediction[53,] 
+prediction[55,] #2009
+prediction[21,] #1975
+prediction[53,] #2007
 
 #Run the GAMs
 gam1<-gam(spr.oys.trend~s(year, by=spr.pdo,k=10), data=full_data)
