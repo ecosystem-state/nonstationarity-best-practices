@@ -1,5 +1,5 @@
 ---
-title: ""DLMs and GAMs for GOA salmon""
+title: "DLMs and GAMs for GOA salmon"
 format: pdf
 editor: visual
 ---
@@ -22,21 +22,23 @@ library(forecast)
 library(ggplot2)
 library(lubridate)
 library(marssTMB)
-
-#install.packages('marssTMB', repos = c('https://atsa-es.r-universe.dev', #'https://cloud.r-project.org'))
-
+library(tidyverse)
 ```
 
 ## Data
 
 ```{r}
 # Load salmon timeseries collapsed into DFA trend
-salm.dat <- read.csv("./GOA_salmon_case_study/Data/dfa_trend.csv") %>%
-  rename(year = t, salmon_DFA = estimate)
+# salm.dat <- read.csv("GOA_salmon_case_study/Data/dfa_trend.csv") %>%
+#  rename(year = t, salmon_DFA = estimate)
+
+salm.dat <- readRDS(here::here("GOA_salmon_case_study/Data/dfa_trend.rds")) 
 
 # Load 3-year running mean winter SST timeseries
-sst.dat <- read.csv("./GOA_salmon_case_study/Data/winterSST_3yr_running_mean.csv") %>%
-  dplyr::select(!X)
+# sst.dat <- read.csv("GOA_salmon_case_study/Data/winterSST_3yr_running_mean.csv") %>%
+#   dplyr::select(!X)
+
+sst.dat <- readRDS(here::here("GOA_salmon_case_study/Data/winterSST_3yr_running_mean.rds")) 
 
 # Bind
 right_join(salm.dat, sst.dat) -> dat
