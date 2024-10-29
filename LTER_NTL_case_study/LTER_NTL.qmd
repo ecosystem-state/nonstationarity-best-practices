@@ -36,16 +36,9 @@ analysis_data<-full_data%>%
          Large_scale=scale(Large),mean_totpuf_scale=scale(mean_totpuf))
 ```
 
-First we start with looking at three time periods using linear regression models:
-1. The historical regime with low water clarity 
-2. A clear water regime where the introduction of Lake Trout into the system from stocking in 2006. 
-3. A novel regime following the introduction of invasive, predatory water flea (*Bythotrephes*) in 2014 which lead to a reversion of water clarity to a less clear state.
+First we start with looking at three time periods using linear regression models: 1. The historical regime with low water clarity 2. A clear water regime where the introduction of Lake Trout into the system from stocking in 2006. 3. A novel regime following the introduction of invasive, predatory water flea (*Bythotrephes*) in 2014 which lead to a reversion of water clarity to a less clear state.
 
-To examine this we start by looking at a few key food web conditions using intercept only models through time:
-1. Water clarity
-2. Phosphorus - which impacts water clarity and is a common bottom-up process that could impact water clarity and we examine as an alternative hypothesis to the top down processes of Lake Trout and invasive speceis.
-3. Abundance of large zooplankton *Daphnia* and *Calanoids*
-4. Chlorophyll
+To examine this we start by looking at a few key food web conditions using intercept only models through time: 1. Water clarity 2. Phosphorus - which impacts water clarity and is a common bottom-up process that could impact water clarity and we examine as an alternative hypothesis to the top down processes of Lake Trout and invasive speceis. 3. Abundance of large zooplankton *Daphnia* and *Calanoids* 4. Chlorophyll
 
 ```{r}
 #| echo: false
@@ -98,7 +91,8 @@ Period.AIC=round(c(AIC(WC_period),AIC(phos_period),AIC(chl_period),AIC(Large_per
 
 
 ```
-We find that water clarity, chlorophyll, and large zooplankton abundance are all better explained by a model that includes apriori defined time periods improves model fit. 
+
+We find that water clarity, chlorophyll, and large zooplankton abundance are all better explained by a model that includes apriori defined time periods improves model fit.
 
 ```{r}
 #| echo: false
@@ -108,7 +102,7 @@ AIC_table %>%
   kable_classic_2(full_width = F)
 ```
 
-We have identified time-varying mean abundance or amount. We see that the relationship between large zooplankton and water clarity, and large zooplankton and chlorophyll, appears to be time-varying. Next we consider whether there are changing relationships between water clarity and these ecosystem dynamics by including a slope parameter and its interaction with time period. 
+We have identified time-varying mean abundance or amount. We see that the relationship between large zooplankton and water clarity, and large zooplankton and chlorophyll, appears to be time-varying. Next we consider whether there are changing relationships between water clarity and these ecosystem dynamics by including a slope parameter and its interaction with time period.
 
 ```{r}
 #| echo: false
@@ -134,7 +128,8 @@ Interaction %>%
   kable_classic_2(full_width = F)
 
 ```
-Both Chlorophyll and Large Zooplankton best explain water clarity with a time varying relationship. We examine how these relationships change through time. 
+
+Both Chlorophyll and Large Zooplankton best explain water clarity with a time varying relationship. We examine how these relationships change through time.
 
 ```{r}
 #| echo: false
