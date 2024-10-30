@@ -386,6 +386,29 @@ BIC  71.6581  13.1864 -33.2407 -25.9477 -18.7148 -11.3127</code></pre>
 <pre><code>   prediction year
 36   5.798336 2016</code></pre>
 </div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Family: gaussian 
+Link function: identity 
+
+Formula:
+mean_sec ~ s(year4, k = 10)
+
+Parametric coefficients:
+            Estimate Std. Error t value Pr(&gt;|t|)    
+(Intercept)  4.95660    0.05004   99.06   &lt;2e-16 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Approximate significance of smooth terms:
+           edf Ref.df     F p-value    
+s(year4) 7.533  8.464 12.88  &lt;2e-16 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+R-sq.(adj) =  0.722   Deviance explained = 77.3%
+GCV = 0.13198  Scale est. = 0.10516   n = 42</code></pre>
+</div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
@@ -429,6 +452,36 @@ BIC 73.393 25.936 11.201 16.747 20.693 28.119</code></pre>
 <div class="cell-output cell-output-stdout">
 <pre><code>   prediction year
 36   5.700338 2016</code></pre>
+</div>
+</div>
+<p>Looking at a 10 year rolling window where the first and last year of the time series changes and see what the slop estimate is as a function of those? Maybe also do a 5-year and a 15-year to also show a function of time series length?</p>
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="LTER_NTL_files/figure-html/unnamed-chunk-8-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Looking at GAMs for Chlorophyll</p>
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="LTER_NTL_files/figure-html/unnamed-chunk-10-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Same process with Zooplankton</p>
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="LTER_NTL_files/figure-html/unnamed-chunk-11-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
 </div>
 </div>
 </section>

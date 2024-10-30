@@ -233,7 +233,7 @@ gam1<-gam(mean_sec~s(year4, by=Large,k=10), data=full_data)
 gam2<-gam(mean_sec~s(year4,k=10), data=full_data)
 gam3<-gam(mean_sec~s(Large,k=10), data=full_data)
 
-
+summary(gam2)
 prediction2=data.frame(prediction=predict(gam1),year=unique(analysis_long$year4))
 ggplot(data=prediction2,aes(y=prediction, x=year)) +
   #facet_wrap(~area1,scales="free_y") +
@@ -253,4 +253,178 @@ summary(bp.y)
 prediction2[26,]
 prediction2[36,]
 
+```
+
+Looking at a 10 year rolling window where the first and last year of the time series changes and see what the slop estimate is as a function of those? Maybe also do a 5-year and a 15-year to also show a function of time series length?
+
+```{r}
+#| echo: false
+
+results <- data.frame()
+important_variables<-data.frame()
+sf_fun <- function(first_year, window){
+for(i in 1:length(window)){
+ for(j in 1:length(first_year)){
+ the_data <- analysis_long%>%
+         filter(Dataset=="mean_sec"|
+                  Dataset=="mean_chl_scale")%>%
+  pivot_wider(names_from = Dataset, values_from = values)%>% 
+   #filter(year4 <= first_year[j]+window[i] & year4 >= first_year[j])
+   filter(year4 >= first_year[j]-window[i] & year4 <= first_year[j])
+ 
+  the_lm <-  lm(mean_sec~mean_chl_scale, data=the_data)
+  
+ 
+ # slope_tibble[["last_year"]] <- last_year
+ # slope_tibble[["first_year"]] <- first_year
+  important_variables_temp <- cbind(Intercept=summary(the_lm)$coefficients[1,1],
+                              Slope=summary(the_lm)$coefficients[2,1], 
+                              last_year=first_year[j], 
+                              first_year=first_year[j]-window[i],
+                              window=window[i])
+  
+important_variables <-rbind(important_variables_temp, important_variables)
+ #rbind(slope_tibble, important_variables)  
+ } 
+results <- rbind(important_variables, results)
+}
+return(results)
+}
+window<-c(3,5,7,9,11,13,15)
+results_window<-sf_fun(2023:1992,window)
+p <- ggplot(results_window, aes(x=last_year, y=as.factor(window), fill= Slope)) + 
+  geom_tile()+
+  xlab("Last Year")+
+  ylab("Window")+
+  scale_fill_gradient2(low = "#075AFF",
+                       mid = "#FFFFCC",
+                       high = "#FF0000", midpoint = 0)
+p 
+
+p <- ggplot(results_window, aes(x=last_year, y=as.factor(window), fill= Intercept)) + 
+  geom_tile()+
+  xlab("Last Year")+
+  ylab("Window")+
+  scale_fill_gradient2(low = "#075AFF",
+                       mid = "#FFFFCC",
+                       high = "#FF0000", midpoint = 6)
+#p
+```
+
+
+
+Looking at GAMs for Chlorophyll
+
+```{r}
+#| echo: false
+#| output: false
+
+
+results <- data.frame()
+important_variables<-data.frame()
+sf_fun_gam <- function(first_year, window){
+for(i in 1:length(window)){
+ for(j in 1:length(first_year)){
+ the_data <- analysis_long%>%
+         filter(Dataset=="mean_sec"|
+                  Dataset=="mean_chl_scale")%>%
+  pivot_wider(names_from = Dataset, values_from = values)%>% 
+   #filter(year4 <= first_year[j]+window[i] & year4 >= first_year[j])
+   filter(year4 >= first_year[j]-window[i] & year4 <= first_year[j])
+ 
+  the_gam <-  gam( mean_sec~s(year4, by=mean_chl_scale,k=6), data=the_data)
+  
+plot_cr <- plot(the_gam, seWithMean = TRUE, n = nrow(the_data))
+
+df_cr <- data.frame(date = the_data$year4, 
+                    est = plot_cr[[1]]$fit, 
+                    se = plot_cr[[1]]$se, type="cr")
+ # slope_tibble[["last_year"]] <- last_year
+ # slope_tibble[["first_year"]] <- first_year
+  important_variables_temp <- cbind(est=mean(df_cr$est), 
+                              last_year=first_year[j], 
+                              first_year=first_year[j]-window[i],
+                              window=window[i])
+  
+important_variables <-rbind(important_variables_temp, important_variables)
+ #rbind(slope_tibble, important_variables)  
+ } 
+results <- rbind(important_variables, results)
+}
+return(results)
+}
+window<-c(7,9,11,13,15)
+results_window<-sf_fun_gam(2023:1992,window)
+
+
+```
+
+```{r}
+#| echo: false
+
+p <- ggplot(results_window, aes(x=last_year, y=as.factor(window), fill= est)) + 
+  geom_tile()+
+  xlab("Last Year")+
+  ylab("Window")+
+  scale_fill_gradient2(low = "#075AFF",
+                       mid = "#FFFFCC",
+                       high = "#FF0000", midpoint = 0)
+p 
+
+```
+
+Same process with Zooplankton
+
+```{r}
+#| echo: false
+
+results <- data.frame()
+important_variables<-data.frame()
+sf_fun_zoop <- function(first_year, window){
+for(i in 1:length(window)){
+ for(j in 1:length(first_year)){
+ the_data <- analysis_long%>%
+         filter(Dataset=="mean_sec"|
+                  Dataset=="Large_scale")%>%
+  pivot_wider(names_from = Dataset, values_from = values)%>% 
+   #filter(year4 <= first_year[j]+window[i] & year4 >= first_year[j])
+   filter(year4 >= first_year[j]-window[i] & year4 <= first_year[j])
+ 
+  the_lm <-  lm(mean_sec~Large_scale, data=the_data)
+  
+ 
+ # slope_tibble[["last_year"]] <- last_year
+ # slope_tibble[["first_year"]] <- first_year
+  important_variables_temp <- cbind(Intercept=summary(the_lm)$coefficients[1,1],
+                              Slope=summary(the_lm)$coefficients[2,1], 
+                              last_year=first_year[j], 
+                              first_year=first_year[j]-window[i],
+                              window=window[i])
+  
+important_variables <-rbind(important_variables_temp, important_variables)
+ #rbind(slope_tibble, important_variables)  
+ } 
+results <- rbind(important_variables, results)
+}
+return(results)
+}
+window<-c(3,5,7,9,11,13,15)
+results_window<-sf_fun_zoop(2023:1992,window)
+p <- ggplot(results_window, aes(x=last_year, y=as.factor(window), fill= Slope)) + 
+  geom_tile()+
+  xlab("First Year")+
+  ylab("Window")+
+  scale_fill_gradient2(low = "#075AFF",
+                       mid = "#FFFFCC",
+                       high = "#FF0000", midpoint = 0)
+p 
+
+p <- ggplot(results_window, aes(x=last_year, y=as.factor(window), fill= Intercept)) + 
+  geom_tile()+
+  xlab("Last Year")+
+  ylab("Window")+
+  scale_fill_gradient2(low = "#075AFF",
+                       mid = "#FFFFCC",
+                       high = "#FF0000", midpoint = 6)
+#p
 ```
