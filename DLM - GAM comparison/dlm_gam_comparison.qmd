@@ -1,0 +1,210 @@
+
+---
+title: "DLMs and GAMs for Lake Washington data"
+format: pdf
+editor: visual
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  warning = FALSE,  
+  error = FALSE,    
+  message = FALSE
+)
+```
+```{r}
+library(MARSS)
+library(mgcv)
+library(dplyr)
+library(forecast)
+library(ggplot2)
+library(lubridate)
+```
+
+## Data
+```{r}
+dat_lakewa <- readRDS("data_for_lakeWA_example.rds")
+dat_aksalmon <- readRDS("data_for_AK_salmon_example.rds")
+
+# renaming
+dat_lakewa <- dplyr::rename(dat_lakewa, 
+                            response = y_adj,
+                            driver = lagged_zp)
+dat_aksalmon <- dplyr::rename(dat_aksalmon,
+                              response = salmon_DFA,
+                              driver = z_sst, 
+                              date = year)
+```
+
+## DLM with time-varying intercepts and time-varying slopes
+
+Define the model – this block is basically copied from the MARSS book (salmon survival case study). First for the Lake WA example:
+
+```{r}
+dat <- dat_lakewa
+m <- 2
+TT <- nrow(dat)
+B <- diag(m)  ## 2x2; Identity
+U <- matrix(0, nrow = m, ncol = 1)  ## 2x1; both elements = 0
+Q <- matrix(list(0), m, m)  ## 2x2; all 0 for now
+diag(Q)[1] <- c("q.alpha")
+diag(Q)[2] <- c("q.beta")
+Z <- array(NA, c(1, m, TT))  ## NxMxT; empty for now
+Z[1, 1, ] <- rep(1, TT)  ## Nx1; 1's for intercept
+Z[1, 2, ] <- dat$driver  ## Nx1; predictor variable
+A <- matrix(0)  ## 1x1; scalar = 0
+R <- matrix("r")  ## 1x1; scalar = r
+## only need starting values for regr parameters
+inits_list <- list(x0 = matrix(c(0, 0), nrow = m))
+## list of model matrices & vectors
+mod_list <- list(B = B, U = U, Q = Q, Z = Z, A = A, R = R)
+# convert response to matrix
+dat_mat <- matrix(dat$response, nrow = 1)
+# fit the model -- crank up the maxit to ensure convergence
+dlm_lakewa_1 <- MARSS(dat_mat, inits = inits_list, model = mod_list,
+               control = list(maxit=4000), method="TMB")
+
+# Fit a second model with just time-varying slope
+diag(Q)[1] <- 1e-10
+mod_list <- list(B = B, U = U, Q = Q, Z = Z, A = A, R = R)
+dlm_lakewa_2 <- MARSS(dat_mat, inits = inits_list, model = mod_list,
+               control = list(maxit=4000), method="TMB")
+```
+
+Now for the AK salmon example
+```{r}
+dat <- dat_aksalmon
+m <- 2
+TT <- nrow(dat)
+B <- diag(m)  ## 2x2; Identity
+U <- matrix(0, nrow = m, ncol = 1)  ## 2x1; both elements = 0
+Q <- matrix(list(0), m, m)  ## 2x2; all 0 for now
+diag(Q)[1] <- c("q.alpha")
+diag(Q)[2] <- c("q.beta")
+Z <- array(NA, c(1, m, TT))  ## NxMxT; empty for now
+Z[1, 1, ] <- rep(1, TT)  ## Nx1; 1's for intercept
+Z[1, 2, ] <- dat$driver  ## Nx1; predictor variable
+A <- matrix(0)  ## 1x1; scalar = 0
+R <- matrix("r")  ## 1x1; scalar = r
+## only need starting values for regr parameters
+inits_list <- list(x0 = matrix(c(0, 0), nrow = m))
+## list of model matrices & vectors
+mod_list <- list(B = B, U = U, Q = Q, Z = Z, A = A, R = R)
+# convert response to matrix
+dat_mat <- matrix(dat$response, nrow = 1)
+# fit the model -- crank up the maxit to ensure convergence
+dlm_aksalmon_1 <- MARSS(dat_mat, inits = inits_list, model = mod_list,
+               control = list(maxit=4000), method="TMB")
+
+# Fit a second model with just time-varying slope
+diag(Q)[1] <- 1e-10
+mod_list <- list(B = B, U = U, Q = Q, Z = Z, A = A, R = R)
+dlm_aksalmon_2 <- MARSS(dat_mat, inits = inits_list, model = mod_list,
+               control = list(maxit=4000), method="TMB")
+```
+
+
+## Time varying models with MGCV
+
+```{r}
+K_WA <- round(0.99*nrow(dat_lakewa))
+K_AK <- round(0.99*nrow(dat_aksalmon))
+dat_lakewa$n_date <- seq(1,nrow(dat_lakewa))
+gam_lakewa_1 <- gam(response ~ s(n_date,k=K_WA) + s(n_date, by = driver, bs = "gp",k=K_WA), data = dat_lakewa)
+gam_lakewa_2 <- gam(response ~ s(n_date, by = driver, bs = "gp",k=K_WA), data = dat_lakewa)
+
+dat_aksalmon$n_date <- seq(1,nrow(dat_aksalmon))
+gam_aksalmon_1 <- gam(response ~ s(n_date,k=K_AK) + s(n_date, by = driver, bs = "gp",k=K_AK), data = dat_aksalmon)
+gam_aksalmon_2 <- gam(response ~ s(n_date, by = driver, bs = "gp",k=K_AK), data = dat_aksalmon)
+
+# extract the smooth estimates with SEs to compare to DLM
+plot_1 <- plot(gam_lakewa_1, seWithMean = TRUE, n = nrow(dat_lakewa))
+plot_2 <- plot(gam_lakewa_2, seWithMean = TRUE, n = nrow(dat_lakewa))
+
+plot_3 <- plot(gam_aksalmon_1, seWithMean = TRUE, n = nrow(dat_aksalmon))
+plot_4 <- plot(gam_aksalmon_2, seWithMean = TRUE, n = nrow(dat_aksalmon))
+```
+
+
+```{r}
+dat_aksalmon$date <- paste0(dat_aksalmon$date,"-01-01")
+
+coef_dlm_lakeWA1 <- data.frame(date = dat_lakewa$date, 
+                        int_est = dlm_lakewa_1$states[1,],
+                        int_se = dlm_lakewa_1$states.se[1,],
+                        slope_est = dlm_lakewa_1$states[2,],
+                        slope_se = dlm_lakewa_1$states.se[2,],
+                        time_varying = "Intercept + slope",
+                        dataset = "Lake Washington : DLM")
+coef_dlm_lakeWA2 <- data.frame(date = dat_lakewa$date, 
+                        int_est = NA,
+                        int_se = NA,
+                        slope_est = dlm_lakewa_2$states[2,],
+                        slope_se = dlm_lakewa_2$states.se[2,],
+                        time_varying = "Slope",
+                        dataset = "Lake Washington : DLM")
+coef_dlm_AK1 <- data.frame(date = dat_aksalmon$date,
+                        int_est = dlm_aksalmon_1$states[1,],
+                        int_se = dlm_aksalmon_1$states.se[1,],
+                        slope_est = dlm_aksalmon_1$states[2,],
+                        slope_se = dlm_aksalmon_1$states.se[2,],
+                        time_varying = "Intercept + slope",
+                        dataset = "Alaska salmon : DLM")
+coef_dlm_AK2 <- data.frame(date = dat_aksalmon$date,
+                        int_est = NA,
+                        int_se = NA,
+                        slope_est = dlm_aksalmon_2$states[2,],
+                        slope_se = dlm_aksalmon_2$states.se[2,],
+                        time_varying = "Slope",
+                        dataset = "Alaska salmon : DLM")
+
+
+coef_gam_lakeWA1 <- data.frame(date = dat_lakewa$date, 
+                        int_est = plot_1[[1]]$fit,
+                        int_se = plot_1[[1]]$se,
+                        slope_est = plot_1[[2]]$fit,
+                        slope_se = plot_1[[2]]$se,
+                        time_varying = "Intercept + slope",
+                        dataset = "Lake Washington : GAM")
+coef_gam_lakeWA2 <- data.frame(date = dat_lakewa$date, 
+                        int_est = NA,
+                        int_se = NA,
+                        slope_est = plot_2[[1]]$fit,
+                        slope_se = plot_2[[1]]$se,
+                        time_varying = "Slope",
+                        dataset = "Lake Washington : GAM")
+coef_gam_AK1 <- data.frame(date = dat_aksalmon$date,
+                        int_est = plot_3[[1]]$fit,
+                        int_se = plot_3[[1]]$fit,
+                        slope_est = plot_3[[2]]$fit,
+                        slope_se = plot_3[[2]]$fit,
+                        time_varying = "Intercept + slope",
+                        dataset = "Alaska salmon : GAM")
+coef_gam_AK2 <- data.frame(date = dat_aksalmon$date,
+                        int_est = NA,
+                        int_se = NA,
+                        slope_est = plot_4[[1]]$fit,
+                        slope_se = plot_4[[1]]$se,
+                        time_varying = "Slope",
+                        dataset = "Alaska salmon : GAM")
+
+coefs <- rbind(coef_dlm_lakeWA1, coef_dlm_lakeWA2, coef_dlm_AK1, coef_dlm_AK2,
+               coef_gam_lakeWA1, coef_gam_lakeWA2, coef_gam_AK1, coef_gam_AK2)
+
+ggplot(coefs, aes(date, slope_est, group = time_varying, fill=time_varying, col=time_varying)) + 
+  geom_ribbon(aes(ymin=slope_est-2*slope_se, ymax = slope_est+2*slope_se), alpha=0.6, col = NA) + 
+  geom_line() + 
+  ylab("Time-varying slope") + 
+  xlab("") + theme_bw() + 
+  facet_wrap(~ dataset, scale="free") + 
+  scale_color_viridis_d(option="magma",begin=0.2, end=0.8, name = "Time-varying") + 
+  scale_fill_viridis_d(option="magma",begin=0.2, end=0.8, name = "Time-varying") + 
+  theme(
+    strip.background = element_rect(fill = "white")
+  )
+ggsave("Figure_2_dlmgam_comparison.png", height = 7, width = 7)
+```
+
+
+
+
+
