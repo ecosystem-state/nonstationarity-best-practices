@@ -19,6 +19,7 @@ library(dplyr)
 library(forecast)
 library(ggplot2)
 library(lubridate)
+library(viridis)
 ```
 
 ## Data
@@ -92,6 +93,39 @@ gam_cr1 <- gam(y_adj ~ s(lagged_zp, bs = "cr"), data = dat)
 gam_cr2 <- gam(y_adj ~ s(lagged_zp, by = n_date, bs = "cr"), data = dat)
 gam_cr3 <- gam(y_adj ~ s(n_date, by = lagged_zp, bs = "cr"), data = dat)
 
+plot_cr1 <- plot(gam_cr1, seWithMean = TRUE, n = nrow(dat))
+df_cr1 <- data.frame(x = plot_cr1[[1]]$x,
+est = plot_cr1[[1]]$fit,
+se = plot_cr1[[1]]$se)
+
+p1 <- ggplot(df_cr1, aes(x, est)) +
+geom_ribbon(aes(ymin = est - 2*se, ymax = est + 2*se), alpha = 0.4, col = NA, fill=viridis(1)) +
+theme_bw() +
+geom_line(col = viridis(1)) + 
+xlab("Phosphorous") +
+ylab("Effect")
+ggsave(p1, filename = "Figure_S1_nonlinear_smooth.png", height = 5, width=7)
+# make second plot showing fits from all 3 models
+pred_1 <- dat
+pred_1$pred <- predict(gam_cr1)
+pred_1$smooth <- "s(phos)"
+pred_2 <- dat
+pred_2$pred <- predict(gam_cr2)
+pred_2$smooth <- "s(phos,by=date)"
+pred_3 <- dat
+pred_3$pred <- predict(gam_cr3)
+pred_3$smooth <- "s(date,by=phos)"
+
+d_all <- rbind(pred_1, pred_2, pred_3)
+p2 <- ggplot(d_all, aes(date, y_adj, col = smooth)) + 
+  geom_point(col="black") + 
+  theme_bw() + 
+  geom_line(aes(date, pred), size=2,alpha=0.5) + 
+  xlab("") + ylab("Detrended cyanobacteria") + 
+  scale_color_viridis_d(option="magma",begin=0.2, end=0.8)
+ggsave(p2, filename = "Figure_S2_nonlinear_v_nonstationary.png", height = 5, width=7)
+
+
 ```
 
 ```{r}
@@ -134,5 +168,5 @@ combo <- (p1 + p2 + p3 + p4) +
 ggsave(combo, filename = "Fig_1.png", height=7, width=7)
 ```
 
-```{}
+```         
 ```
