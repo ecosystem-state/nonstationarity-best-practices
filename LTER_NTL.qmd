@@ -28,7 +28,8 @@ library(kableExtra)
 library(knitr)
 library(strucchange)
 library(mgcv)
-
+library(gratia)
+col<-paletteer_d("nationalparkcolors::Everglades")
 full_data <- readRDS("LTER_NTL_case_study/NTL_LTER_TL_data.rds")
 analysis_data<-full_data%>%
   select(year4, mean_sec,mean_chl, Large,mean_totpuf,period)%>%
@@ -314,7 +315,7 @@ Looking at GAMs for Chlorophyll
 #| echo: false
 #| output: false
 
-col<-paletteer_d("nationalparkcolors::Everglades")
+
 results <- data.frame()
 important_variables<-data.frame()
 sf_fun_gam <- function(first_year, window){
@@ -483,4 +484,11 @@ panel_b<-ggplot(data=pred,aes(y=prediction.fit, x=year,group=Model, col=Model)) 
 
 ggarrange(panel_a, panel_b, panel_c, panel_d, labels=c("A.", "B.", "C.", "D."))
 
+#pdf(file = "Figure1.pdf",   # The directory you want to save the file in
+#    width = 8, # The width of the plot in inches
+#    height = 6) # The height of the plot in inches
+
+#ggarrange(panel_a, panel_b, panel_c, panel_d, labels=c("A.", "B.", "C.", "D."))
+
+#dev.off()
 ```
