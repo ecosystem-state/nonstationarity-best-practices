@@ -1,9 +1,9 @@
-
 ---
 title: "DLMs and GAMs for Lake Washington data"
 format: pdf
 editor: visual
 ---
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(
   warning = FALSE,  
@@ -11,16 +11,23 @@ knitr::opts_chunk$set(
   message = FALSE
 )
 ```
+
 ```{r}
+#install.packages('marssTMB', repos = c('https://atsa-es.r-universe.dev', #'https://cloud.r-project.org'))
 library(MARSS)
 library(mgcv)
 library(dplyr)
 library(forecast)
 library(ggplot2)
 library(lubridate)
+library(marssTMB)
+library(paletteer)
+col<-paletteer_d("nationalparkcolors::Everglades")
+
 ```
 
 ## Data
+
 ```{r}
 dat_lakewa <- readRDS("data_for_lakeWA_example.rds")
 dat_aksalmon <- readRDS("data_for_AK_salmon_example.rds")
@@ -71,6 +78,7 @@ dlm_lakewa_2 <- MARSS(dat_mat, inits = inits_list, model = mod_list,
 ```
 
 Now for the AK salmon example
+
 ```{r}
 dat <- dat_aksalmon
 m <- 2
@@ -102,7 +110,6 @@ dlm_aksalmon_2 <- MARSS(dat_mat, inits = inits_list, model = mod_list,
                control = list(maxit=4000), method="TMB")
 ```
 
-
 ## Time varying models with MGCV
 
 ```{r}
@@ -123,7 +130,6 @@ plot_2 <- plot(gam_lakewa_2, seWithMean = TRUE, n = nrow(dat_lakewa))
 plot_3 <- plot(gam_aksalmon_1, seWithMean = TRUE, n = nrow(dat_aksalmon))
 plot_4 <- plot(gam_aksalmon_2, seWithMean = TRUE, n = nrow(dat_aksalmon))
 ```
-
 
 ```{r}
 dat_aksalmon$date <- paste0(dat_aksalmon$date,"-01-01")
@@ -192,19 +198,16 @@ coefs <- rbind(coef_dlm_lakeWA1, coef_dlm_lakeWA2, coef_dlm_AK1, coef_dlm_AK2,
 
 ggplot(coefs, aes(date, slope_est, group = time_varying, fill=time_varying, col=time_varying)) + 
   geom_ribbon(aes(ymin=slope_est-2*slope_se, ymax = slope_est+2*slope_se), alpha=0.6, col = NA) + 
-  geom_line() + 
+  geom_line(aes(lty=time_varying)) + 
   ylab("Time-varying slope") + 
   xlab("") + theme_bw() + 
   facet_wrap(~ dataset, scale="free") + 
-  scale_color_viridis_d(option="magma",begin=0.2, end=0.8, name = "Time-varying") + 
-  scale_fill_viridis_d(option="magma",begin=0.2, end=0.8, name = "Time-varying") + 
+  #scale_color_viridis_d(option="magma",begin=0.2, end=0.8, name = "Time-varying") + 
+  #scale_fill_viridis_d(option="magma",begin=0.2, end=0.8, name = "Time-varying") + 
+  scale_fill_manual(values=c(col[4],col[5]))+
+  scale_colour_manual(values=c(col[4],col[5]))+
   theme(
     strip.background = element_rect(fill = "white")
   )
 ggsave("Figure_2_dlmgam_comparison.png", height = 7, width = 7)
 ```
-
-
-
-
-
