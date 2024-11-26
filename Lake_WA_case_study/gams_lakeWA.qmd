@@ -231,13 +231,12 @@ ggplot(df_smooth, aes(date, est, col=knots, fill=knots)) +
 
 ```
 
-### Interpretation: 
+### Interpretation:
 
 -   Sewage into Lake WA was a driver of phosphorous, and thought to cause major increases in blue-green algae into the lake
 
-```{=html}
 <!-- -->
-```
+
 -   This example includes a non-stationary time series of phosphorous into Lake WA, as well as non-stationary driver-response relationship
 
 -   Effects of phosphorous on blue-green algae also appear non-stationary – increasing into the 1970s and becoming stronger (more positive). Why? Biologically this may because the Daphnia population really expanded in the late 1970s (Daphnia sometimes eat blue green algae, but it's a poor food source) – big picture, the lake community changed, and the effect of phosphorous would have to increase to create the same response ("Grazers are known to inhibit cyanobacteria" paragraph in their Discussion)

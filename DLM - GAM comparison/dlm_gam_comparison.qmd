@@ -197,7 +197,7 @@ coefs <- rbind(coef_dlm_lakeWA1, coef_dlm_lakeWA2, coef_dlm_AK1, coef_dlm_AK2,
                coef_gam_lakeWA1, coef_gam_lakeWA2, coef_gam_AK1, coef_gam_AK2)
 
 ggplot(coefs, aes(date, slope_est, group = time_varying, fill=time_varying, col=time_varying)) + 
-  geom_ribbon(aes(ymin=slope_est-2*slope_se, ymax = slope_est+2*slope_se), alpha=0.6, col = NA) + 
+  geom_ribbon(aes(ymin=slope_est-2*slope_se, ymax = slope_est+2*slope_se), alpha=0.3, col = NA) + 
   geom_line(aes(lty=time_varying)) + 
   ylab("Time-varying slope") + 
   xlab("") + theme_bw() + 

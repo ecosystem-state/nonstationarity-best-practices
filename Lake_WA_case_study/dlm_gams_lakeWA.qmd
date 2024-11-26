@@ -20,6 +20,9 @@ library(forecast)
 library(ggplot2)
 library(lubridate)
 library(viridis)
+library(paletteer)
+
+col<-paletteer_d("nationalparkcolors::Everglades")
 ```
 
 ## Data
@@ -107,13 +110,16 @@ ylab("Effect")
 ggsave(p1, filename = "Figure_S1_nonlinear_smooth.png", height = 5, width=7)
 # make second plot showing fits from all 3 models
 pred_1 <- dat
-pred_1$pred <- predict(gam_cr1)
+pred_1$pred <- predict(gam_cr1, se.fit=TRUE)$fit
+pred_1$se <- predict(gam_cr1, se.fit=TRUE)$se.fit
 pred_1$smooth <- "s(phos)"
 pred_2 <- dat
-pred_2$pred <- predict(gam_cr2)
+pred_2$pred <- predict(gam_cr2, se.fit=TRUE)$fit
+pred_2$se <- predict(gam_cr2, se.fit=TRUE)$se.fit
 pred_2$smooth <- "s(phos,by=date)"
 pred_3 <- dat
-pred_3$pred <- predict(gam_cr3)
+pred_3$pred <- predict(gam_cr3, se.fit=TRUE)$fit
+pred_3$se <- predict(gam_cr3, se.fit=TRUE)$se.fit
 pred_3$smooth <- "s(date,by=phos)"
 
 d_all <- rbind(pred_1, pred_2, pred_3)
@@ -167,6 +173,134 @@ combo <- (p1 + p2 + p3 + p4) +
   theme(plot.tag.position = c(0.1, 0.95))
 ggsave(combo, filename = "Fig_1.png", height=7, width=7)
 ```
+Here is some more analysis on choices of setting up a GAM:
 
+```{r}
+# Maybe some discussion in the paper about why s(n_date,lagged_zp) and not 
+# the other way around?
+
+# The 'sp' parameter also controls the penalty on smoothing (below)
+dat$n_date <- as.numeric(as.factor(dat$date))
+gam_cr <- gam(y_adj ~ s(n_date, by = lagged_zp, bs = "cr",k=nrow(dat)), 
+              data = dat)
+gam_tp <- gam(y_adj ~ s(n_date, by = lagged_zp,k=nrow(dat)), 
+              data = dat) # k is ignored
+gam_gp <- gam_cr <- gam(y_adj ~ s(n_date, by = lagged_zp, bs = "gp",k=nrow(dat)), 
+                        data = dat)
+
+dat$pred_gam <- predict(gam_tp)
+
+ggplot(dat, aes(date, pred)) + 
+  geom_line() + ylab("De-seasoned Ln blue-green algae") + 
+  xlab("Date") + theme_bw() + 
+  geom_point(aes(date,y_adj), col="red",alpha=0.5) + 
+  geom_line(aes(date,pred_gam), col="blue",alpha=0.5)
+
+# extract the smooth estimates with SEs to compare to DLM
+plot_cr <- plot(gam_cr, seWithMean = TRUE, n = nrow(dat))
+plot_tp <- plot(gam_tp, seWithMean = TRUE, n = nrow(dat))
+plot_gp <- plot(gam_gp, seWithMean = TRUE, n = nrow(dat))
+
+df_cr <- data.frame(date = dat$date, 
+                    est = plot_cr[[1]]$fit, 
+                    se = plot_cr[[1]]$se, type="cr")
+df_tp <- data.frame(date = dat$date, 
+                    est = plot_tp[[1]]$fit, 
+                    se = plot_tp[[1]]$se, type="tp")
+df_gp <- data.frame(date = dat$date, 
+                    est = plot_gp[[1]]$fit, 
+                    se = plot_gp[[1]]$se, type="gp")
+df_dlm <- data.frame(date = dat$date, 
+                     est = dat$slope_est, 
+                     se = dat$slope_se, type="dlm")
+df_smooth <- rbind(df_cr, df_tp, df_gp, df_dlm)
+df_smooth_type<-df_smooth
+ggplot(df_smooth, aes(date, est, col=type, fill=type)) + 
+  geom_line(aes(date,est-2*se), alpha=0.5, linetype=2) + 
+  geom_line(aes(date,est+2*se), alpha=0.5, linetype=2) + 
+  geom_line(aes(date,est), alpha=0.5) + 
+  theme_bw() + 
+  xlab("Date") + 
+  ylab("Phosphorous effect on blue-green algae") + 
+  ggtitle("Effect of choice of GAM smooth")
+
+gam_cr30 <- gam(y_adj ~ s(n_date, by = lagged_zp, bs = "cr",
+                          k=nrow(dat)), data = dat)
+gam_cr60 <- gam(y_adj ~ s(n_date, by = lagged_zp, bs = "cr",
+                          k=nrow(dat),sp=16), data = dat)
+gam_cr90 <- gam(y_adj ~ s(n_date, by = lagged_zp, bs = "cr",
+                          k=nrow(dat),sp=2.5), data = dat)
+gam_cr120 <- gam(y_adj ~ s(n_date, by = lagged_zp, bs = "cr",
+                           k=nrow(dat),sp=0.3), data = dat)
+
+plot_cr30 <- plot(gam_cr30, seWithMean = TRUE, n = nrow(dat))
+plot_cr60 <- plot(gam_cr60, seWithMean = TRUE, n = nrow(dat))
+plot_cr90 <- plot(gam_cr90, seWithMean = TRUE, n = nrow(dat))
+plot_cr120 <- plot(gam_cr120, seWithMean = TRUE, n = nrow(dat))
+
+df_30 <- data.frame(date = dat$date, 
+                    est = plot_cr30[[1]]$fit, 
+                    se = plot_cr30[[1]]$se, knots="30")
+df_60 <- data.frame(date = dat$date, 
+                    est = plot_cr60[[1]]$fit, 
+                    se = plot_cr60[[1]]$se, knots="60")
+df_90 <- data.frame(date = dat$date, 
+                    est = plot_cr90[[1]]$fit, 
+                    se = plot_cr90[[1]]$se, knots="90")
+df_120 <- data.frame(date = dat$date, 
+                     est = plot_cr120[[1]]$fit, 
+                     se = plot_cr120[[1]]$se, knots="120")
+df_smooth <- rbind(df_30, df_60, df_90, df_120)
+df_smooth_knots<-df_smooth
+ggplot(df_smooth, aes(date, est, col=knots, fill=knots)) + 
+  geom_line(aes(date,est-2*se), alpha=0.5, linetype=2) + 
+  geom_line(aes(date,est+2*se), alpha=0.5, linetype=2) + 
+  geom_line(aes(date,est), alpha=0.5) + 
+  theme_bw() + xlab("Date") + ylab("Phosphorous effect on blue-green algae") + 
+  ggtitle("Effect of smoothing DF on SEs")
+
+```
+
+Coding Figure 2 all together
+
+```{r}
+
+
+panel.a <- ggplot(d_all, aes(date, y_adj, col = smooth)) + 
+  geom_point(col="grey") + 
+  theme_bw() + 
+    geom_ribbon(aes(ymin = pred-2*se, ymax = pred+2*se, y = NULL, fill=smooth),
+              alpha = 0.15, colour = NA)+
+  scale_fill_manual(values=c(col[4],col[3],col[2]))+
+  scale_colour_manual(values=c(col[4],col[3],col[2]))+
+  geom_line(aes(date, pred), size=1.5,alpha=0.5) + 
+  xlab("") + ylab("Detrended cyanobacteria")  
+ # scale_color_viridis_d(option="magma",begin=0.2, end=0.8)
+
+panel.b <-ggplot(df_smooth_knots, aes(date, est, col=knots, fill=knots)) + 
+  geom_line(aes(date,est-2*se), alpha=0.5, linetype=2) + 
+  geom_line(aes(date,est+2*se), alpha=0.5, linetype=2) + 
+     geom_ribbon(aes(ymin = est-2*se, ymax = est+2*se, y = NULL, fill=knots),
+              alpha = 0.1, colour = NA)+ 
+  geom_line(aes(date,est), alpha=0.6, lwd=0.75) + 
+  scale_colour_manual(values=c(col[4],col[5],col[3],col[1]))+
+  scale_fill_manual(values=c(col[4],col[5],col[3],col[1]))+ 
+  #ggtitle("Effect of smoothing DF on SEs")+
+  theme_bw() + xlab("Date") + ylab("Phosphorous effect on blue-green algae") 
+
+panel.c<-ggplot(df_smooth_type, aes(date, est, col=type)) + 
+       geom_ribbon(aes(ymin = est-2*se, ymax = est+2*se, y = NULL, fill=type),
+              alpha = 0.05, colour = NA)+ 
+  geom_line(aes(date,est-2*se), alpha=0.5, linetype=2) + 
+  geom_line(aes(date,est+2*se), alpha=0.5, linetype=2) + 
+  geom_line(aes(date,est), alpha=0.6, lwd=0.75) + 
+  scale_colour_manual(values=c(col[5],col[4],col[3],col[1]))+
+  scale_fill_manual(values=c(col[5],col[4],col[3],col[1]))+ 
+  #ggtitle("Effect of choice of GAM smooth")+
+  theme_bw() + xlab("Date") + ylab("Phosphorous effect on blue-green algae") 
+figure2<-ggarrange(panel.a, ggarrange(panel.b, panel.c, nrow=1,labels=c("B.", "C.")),labels=c("A."),nrow=2)
+
+
+ggsave(figure2, filename = "Figure_S2_GAMtypes.png", height = 8, width=8.5)
 ```         
 ```

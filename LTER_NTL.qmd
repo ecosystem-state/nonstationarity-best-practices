@@ -481,8 +481,8 @@ panel_b<-ggplot(data=pred,aes(y=prediction.fit, x=year,group=Model, col=Model)) 
   ylab("Predicted Water Clarity")+
   xlab("Year")
 
-
 ggarrange(panel_a, panel_b, panel_c, panel_d, labels=c("A.", "B.", "C.", "D."))
+ggsave("Figure_1_lmgam_comparison.png", height = 7, width = 7)
 
 #pdf(file = "Figure1.pdf",   # The directory you want to save the file in
 #    width = 8, # The width of the plot in inches
