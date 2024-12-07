@@ -196,18 +196,40 @@ coef_gam_AK2 <- data.frame(date = dat_aksalmon$date,
 coefs <- rbind(coef_dlm_lakeWA1, coef_dlm_lakeWA2, coef_dlm_AK1, coef_dlm_AK2,
                coef_gam_lakeWA1, coef_gam_lakeWA2, coef_gam_AK1, coef_gam_AK2)
 
-ggplot(coefs, aes(date, slope_est, group = time_varying, fill=time_varying, col=time_varying)) + 
+slope_panel <-ggplot(coefs, aes(date, slope_est, group = time_varying, fill=time_varying, col=time_varying)) + 
   geom_ribbon(aes(ymin=slope_est-2*slope_se, ymax = slope_est+2*slope_se), alpha=0.3, col = NA) + 
   geom_line(aes(lty=time_varying)) + 
   ylab("Time-varying slope") + 
   xlab("") + theme_bw() + 
+  ggtitle("Slope")+
   facet_wrap(~ dataset, scale="free") + 
   #scale_color_viridis_d(option="magma",begin=0.2, end=0.8, name = "Time-varying") + 
   #scale_fill_viridis_d(option="magma",begin=0.2, end=0.8, name = "Time-varying") + 
   scale_fill_manual(values=c(col[4],col[5]))+
   scale_colour_manual(values=c(col[4],col[5]))+
+  guides(fill="none",colour="none",lty="none")+
   theme(
-    strip.background = element_rect(fill = "white")
+    strip.background = element_rect(fill = "white"),
+    plot.title = element_text(hjust = 0.5)
   )
+slope_panel 
+int_panel <- ggplot(coefs, aes(date, int_est, group = time_varying, fill=time_varying, col=time_varying)) + 
+  geom_ribbon(aes(ymin=int_est-2*int_se, ymax = int_est+2*int_se), alpha=0.3, col = NA) + 
+  geom_line(aes(lty=time_varying)) + 
+  ylab("Time-varying intercept") + 
+  xlab("") + theme_bw() + 
+  facet_wrap(~ dataset, scale="free") + 
+  ggtitle("Intercept")+
+  #scale_color_viridis_d(option="magma",begin=0.2, end=0.8, name = "Time-varying") + 
+  #scale_fill_viridis_d(option="magma",begin=0.2, end=0.8, name = "Time-varying") + 
+  scale_fill_manual(values=c(col[4],col[5]))+
+  scale_colour_manual(values=c(col[4],col[5]))+
+  
+  theme(
+    strip.background = element_rect(fill = "white"),
+    plot.title = element_text(hjust = 0.5)
+  )
+int_panel
+
 ggsave("Figure_2_dlmgam_comparison.png", height = 7, width = 7)
 ```
