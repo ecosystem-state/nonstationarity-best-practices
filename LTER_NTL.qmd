@@ -225,8 +225,10 @@ bp.y <- breakpoints(y.ts ~ 1)
 summary(bp.y) 
 prediction[26,]
 prediction[36,]
-gam1<-gam(mean_sec~s(year4, by=Large,k=10), data=full_data)
+gam1<-gam(mean_sec~s(year4, by=Large,k=10)+s(year4,k=10), data=full_data)
 #plot(gam1)
+#gam1<-gam(mean_sec~s(year4, by=Large,k=10), data=full_data)
+
 gam2<-gam(mean_sec~s(year4,k=10), data=full_data)
 gam3<-gam(mean_sec~s(Large,k=10), data=full_data)
 
@@ -272,7 +274,7 @@ for(i in 1:length(window)){
  
   the_lm <-  lm(mean_sec~mean_chl_scale, data=the_data)
   
- 
+
  # slope_tibble[["last_year"]] <- last_year
  # slope_tibble[["first_year"]] <- first_year
   important_variables_temp <- cbind(Intercept=summary(the_lm)$coefficients[1,1],
@@ -424,7 +426,7 @@ Now that we have looked at both the LM and GAM, lets generate a plot of them tog
 
 ```{r}
 #| echo: false
-
+summary(zoop_slope_int)
 pred<-rbind(prediction2%>%mutate(Model="GAM",
                      prediction.lwr=prediction.fit-2*prediction.se.fit,
                      prediction.upr=prediction.fit+2*prediction.se.fit)%>%
@@ -436,24 +438,38 @@ col<-paletteer_d("nationalparkcolors::Everglades")
 table_zoop_slope_int<-broom::tidy(zoop_slope_int)
 df <- data_sim("eg1", seed = 2)
 p_obj <- plot(gam1, residuals = TRUE)
-p_obj <- p_obj[[1]] # just one smooth so select the first component
-sm_df <- as.data.frame(p_obj[c("x", "se", "fit")])%>%
+
+p_slope <- p_obj[[1]] # just one smooth so select the first component
+p_intercept <- p_obj[[2]] # just one smooth so select the first component
+
+p_slope<-as.data.frame(p_slope[c("x", "se", "fit")])%>%
+   rename(se_slope=se, fit_slope=fit) 
+p_intercept<-as.data.frame(p_intercept[c("x", "se", "fit")])%>%
+   rename(se_intercept=se, fit_intercept=fit) 
+p<-p_intercept%>%left_join(p_slope)
+sm_df <- p%>%
   mutate(slope = ifelse(x<=2007, table_zoop_slope_int$estimate[2],
                           ifelse(x>=2014, table_zoop_slope_int$estimate[6],
                                table_zoop_slope_int$estimate[5])))%>%
   mutate(error = ifelse(x<=2007, table_zoop_slope_int$std.error[2],
                           ifelse(x>=2014, table_zoop_slope_int$std.error[6],
-                               table_zoop_slope_int$std.error[5])))
+                               table_zoop_slope_int$std.error[5])))%>%
+    mutate(intercept = ifelse(x<=2007, table_zoop_slope_int$estimate[1],
+                          ifelse(x>=2014, table_zoop_slope_int$estimate[1]+table_zoop_slope_int$estimate[4],
+                              table_zoop_slope_int$estimate[1]+table_zoop_slope_int$estimate[3])))%>%
+   mutate(error_int = ifelse(x<=2007, table_zoop_slope_int$std.error[1],
+                          ifelse(x>=2014, table_zoop_slope_int$std.error[4],
+                               table_zoop_slope_int$std.error[3])))
 data_df <- as.data.frame(p_obj[c("raw", "p.resid")])
 
 ## panel a
-panel_a<-ggplot(sm_df, aes(x = x, y = fit)) +
+panel_a<-ggplot(sm_df, aes(x = x, y = fit_slope)) +
     geom_line(aes(y=slope), colour=col[2])+
   geom_ribbon(aes(ymin = slope - error, ymax = slope+ error, y = NULL),
               alpha = 0.3,fill=col[2])+
   #geom_rug(data = data_df, mapping = aes(x = raw, y = NULL),sides = "b") +
   #geom_point(data = data_df, mapping = aes(x = raw, y = p.resid)) +
-  geom_ribbon(aes(ymin = fit - se, ymax = fit + se, y = NULL),
+  geom_ribbon(aes(ymin = fit_slope- se_slope, ymax = fit_slope + se_slope, y = NULL),
               alpha = 0.3, fill=col[3]) +
   geom_line(colour=col[3], lty=2) +
   labs(x = p_obj$xlab, y = p_obj$ylab)+
@@ -462,10 +478,27 @@ panel_a<-ggplot(sm_df, aes(x = x, y = fit)) +
   xlab("Year")+
   theme_classic()+
   theme(axis.text = element_text(size = 11))
+panel_a
 
+panel_b<-ggplot(sm_df, aes(x = x, y = fit_intercept+4.758)) +
+    geom_line(aes(y=intercept), colour=col[2])+
+  geom_ribbon(aes(ymin = intercept - error_int, ymax = intercept+ error_int, y = NULL),
+              alpha = 0.3,fill=col[2])+
+  #geom_rug(data = data_df, mapping = aes(x = raw, y = NULL),sides = "b") +
+  #geom_point(data = data_df, mapping = aes(x = raw, y = p.resid)) +
+  geom_ribbon(aes(ymin = fit_intercept- se_intercept+4.758, ymax = fit_intercept + se_intercept+4.758, y = NULL),
+              alpha = 0.3, fill=col[3]) +
+  geom_line(colour=col[3], lty=2) +
+  labs(x = p_obj$xlab, y = p_obj$ylab)+
+  geom_vline(xintercept=c(2007, 2014), lty=2, col='grey')+ 
+  ylab("Intercept")+
+  xlab("Year")+
+  theme_classic()+
+  theme(axis.text = element_text(size = 11))
+panel_b
 #panel B
 
-panel_b<-ggplot(data=pred,aes(y=prediction.fit, x=year,group=Model, col=Model)) +
+panel_f<-ggplot(data=pred,aes(y=prediction.fit, x=year,group=Model, col=Model)) +
   geom_line(lwd=0.7, aes(col=Model,lty=Model))+
   geom_ribbon(aes(ymin = prediction.lwr, ymax = prediction.upr, y = NULL,fill=Model),
               alpha = 0.3, colour = NA)+
@@ -481,8 +514,10 @@ panel_b<-ggplot(data=pred,aes(y=prediction.fit, x=year,group=Model, col=Model)) 
   ylab("Predicted Water Clarity")+
   xlab("Year")
 
-ggarrange(panel_a, panel_b, panel_c, panel_d, labels=c("A.", "B.", "C.", "D."))
-ggsave("Figure_1_lmgam_comparison.png", height = 7, width = 7)
+top_row<-ggarrange(panel_f, panel_b, panel_a, labels=c("A.", "B.", "C."), nrow=1,ncol=3, widths=c(1.5,1,1))
+bottom_row<-ggarrange(panel_d,panel_c, labels=c("D.", "E."), nrow=1,ncol=2)
+ggarrange(top_row, bottom_row, nrow=2)
+ggsave("Figure_1_lmgam_comparisonv2.png", height = 7, width = 11)
 
 #pdf(file = "Figure1.pdf",   # The directory you want to save the file in
 #    width = 8, # The width of the plot in inches
