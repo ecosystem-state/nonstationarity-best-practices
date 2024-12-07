@@ -214,7 +214,9 @@ df_gp <- data.frame(date = dat$date,
 df_dlm <- data.frame(date = dat$date, 
                      est = dat$slope_est, 
                      se = dat$slope_se, type="dlm")
-df_smooth <- rbind(df_cr, df_tp, df_gp, df_dlm)
+#df_smooth <- rbind(df_cr, df_tp, df_gp, df_dlm)
+
+df_smooth <- rbind(df_cr,  df_gp)
 df_smooth_type<-df_smooth
 ggplot(df_smooth, aes(date, est, col=type, fill=type)) + 
   geom_line(aes(date,est-2*se), alpha=0.5, linetype=2) + 
