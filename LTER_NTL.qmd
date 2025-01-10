@@ -357,8 +357,6 @@ results_window<-sf_fun_gam(2023:1992,window)
 
 ```
 
-
-
 Same process with Zooplankton
 
 ```{r}
@@ -398,8 +396,8 @@ window<-c(3,5,7,9,11,13,15)
 results_window<-sf_fun_zoop(2023:1992,window)
 panel_c <- ggplot(results_window, aes(x=last_year, y=as.factor(window), fill= Slope)) + 
   geom_tile()+
-  xlab("Last Year of Window")+
-  ylab("Window Length (Years)")+
+  xlab("")+
+  ylab("")+
   scale_fill_gradient2(low = col[2],
                        mid = "#FFFFCC",
                        high = col[3], midpoint = 0)+
@@ -410,7 +408,7 @@ panel_c
 panel_d<-rw_intercept <- 
   ggplot(results_window, aes(x=last_year, y=as.factor(window), fill= Intercept)) + 
   geom_tile()+
-  xlab("Last Year of Window")+
+  xlab("")+
   ylab("Window Length (Years)")+
       geom_vline(xintercept = c(2006.5,2014.5), lty=2)+
 
@@ -420,6 +418,7 @@ panel_d<-rw_intercept <-
       theme_classic()
   
 panel_d
+
 ```
 
 Now that we have looked at both the LM and GAM, lets generate a plot of them together:
@@ -475,7 +474,7 @@ panel_a<-ggplot(sm_df, aes(x = x, y = fit_slope)) +
   labs(x = p_obj$xlab, y = p_obj$ylab)+
   geom_vline(xintercept=c(2007, 2014), lty=2, col='grey')+ 
   ylab("Slope")+
-  xlab("Year")+
+  xlab("")+
   theme_classic()+
   theme(axis.text = element_text(size = 11))
 panel_a
@@ -492,7 +491,7 @@ panel_b<-ggplot(sm_df, aes(x = x, y = fit_intercept+4.758)) +
   labs(x = p_obj$xlab, y = p_obj$ylab)+
   geom_vline(xintercept=c(2007, 2014), lty=2, col='grey')+ 
   ylab("Intercept")+
-  xlab("Year")+
+  xlab("")+
   theme_classic()+
   theme(axis.text = element_text(size = 11))
 panel_b
@@ -512,12 +511,14 @@ panel_f<-ggplot(data=pred,aes(y=prediction.fit, x=year,group=Model, col=Model)) 
   theme_classic()+
   theme(axis.text = element_text(size = 11))+
   ylab("Predicted Water Clarity")+
-  xlab("Year")
+  xlab("")
 
 top_row<-ggarrange(panel_f, panel_b, panel_a, labels=c("A.", "B.", "C."), nrow=1,ncol=3, widths=c(1.5,1,1))
+top_row<-annotate_figure(top_row, bottom = textGrob("Year", gp = gpar(cex = 1)))
 bottom_row<-ggarrange(panel_d,panel_c, labels=c("D.", "E."), nrow=1,ncol=2)
+bottom_row<-annotate_figure(bottom_row, bottom = textGrob("Last Year of Window", gp = gpar(cex = 1)))
 ggarrange(top_row, bottom_row, nrow=2)
-ggsave("Figure_1_lmgam_comparisonv2.png", height = 7, width = 11)
+ggsave("Figure_1_lmgam_comparisonv2.png", height = 7, width = 11,bg="white")
 
 #pdf(file = "Figure1.pdf",   # The directory you want to save the file in
 #    width = 8, # The width of the plot in inches

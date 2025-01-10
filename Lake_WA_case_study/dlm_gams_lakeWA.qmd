@@ -85,6 +85,63 @@ lag_n <- 5
 dat$lagged_zp <- c(rep(NA, lag_n), dat$zp[1:(nrow(dat)-lag_n)]) 
 dat <- dat[-c(1:lag_n),]
 ```
+##DLMs
+
+Define the model – this block is basically copied from the MARSS book (salmon survival case study)
+```{r}
+m <- 2
+TT <- nrow(dat)
+B <- diag(m) ## 2x2; Identity
+U <- matrix(0, nrow = m, ncol = 1) ## 2x1; both elements = 0
+Q <- matrix(list(0), m, m) ## 2x2; all 0 for now
+diag(Q)[1] <- 0.0000001
+diag(Q)[2] <- c("q.beta")
+#diag(Q) <- c("q.alpha", "q.beta") ## 2x2; diag = (q1,q2)
+Z <- array(NA, c(1, m, TT)) ## NxMxT; empty for now
+Z[1, 1, ] <- rep(1, TT) ## Nx1; 1's for intercept
+Z[1, 2, ] <- dat$lagged_zp ## Nx1; predictor variable
+A <- matrix(0) ## 1x1; scalar = 0
+R <- matrix("r") ## 1x1; scalar = r
+## only need starting values for regr parameters
+inits_list <- list(x0 = matrix(c(0, 0), nrow = m))
+## list of model matrices & vectors
+mod_list <- list(B = B, U = U, Q = Q, Z = Z, A = A, R = R)
+# convert response to matrix
+dat_mat <- matrix(dat$y_adj, nrow = 1)
+# fit the model -- crank up the maxit to ensure convergence
+dlm_1 <- MARSS(dat_mat, inits = inits_list, model = mod_list,
+control = list(maxit=4000), method="TMB")
+
+
+
+```
+Let’s put the state estimates back into the original dataframe and do some plotting. The slope is generally positive, which is what we expect – and exhibits clear variation through time
+
+```{r}
+dat$int_est <- dlm_1$states[1,]
+dat$int_se <- dlm_1$states.se[1,]
+
+dat$slope_est <- dlm_1$states[2,]
+dat$slope_se <- dlm_1$states.se[2,]
+ggplot(dat, aes(date, slope_est)) +
+geom_ribbon(aes(ymin=slope_est-2*slope_se, ymax = slope_est+2*slope_se), alpha=0.6) +
+geom_line() + ylab("Time-varying slope") + xlab("") + theme_bw()
+```
+
+We can also plot the fitted values from our model, and some diagnostics
+
+```{r}
+pred <- fitted(dlm_1)
+dat$pred <- pred$.fitted
+ggplot(dat, aes(date, pred)) +
+geom_line() +
+ylab("De-seasoned Ln blue-green algae") +
+xlab("Date") +
+theme_bw() +
+geom_point(aes(date,y_adj), col="red",alpha=0.5)
+```
+
+
 
 ## GAMs
 
@@ -214,9 +271,9 @@ df_gp <- data.frame(date = dat$date,
 df_dlm <- data.frame(date = dat$date, 
                      est = dat$slope_est, 
                      se = dat$slope_se, type="dlm")
-#df_smooth <- rbind(df_cr, df_tp, df_gp, df_dlm)
+df_smooth <- rbind(df_cr, df_tp, df_gp, df_dlm)
 
-df_smooth <- rbind(df_cr,  df_gp)
+#df_smooth <- rbind(df_cr,  df_gp)
 df_smooth_type<-df_smooth
 ggplot(df_smooth, aes(date, est, col=type, fill=type)) + 
   geom_line(aes(date,est-2*se), alpha=0.5, linetype=2) + 
@@ -272,6 +329,7 @@ Coding Figure 2 all together
 panel.a <- ggplot(d_all, aes(date, y_adj, col = smooth)) + 
   geom_point(col="grey") + 
   theme_bw() + 
+  xlab("Year")+
     geom_ribbon(aes(ymin = pred-2*se, ymax = pred+2*se, y = NULL, fill=smooth),
               alpha = 0.15, colour = NA)+
   scale_fill_manual(values=c(col[4],col[3],col[2]))+
@@ -286,10 +344,11 @@ panel.b <-ggplot(df_smooth_knots, aes(date, est, col=knots, fill=knots)) +
      geom_ribbon(aes(ymin = est-2*se, ymax = est+2*se, y = NULL, fill=knots),
               alpha = 0.1, colour = NA)+ 
   geom_line(aes(date,est), alpha=0.6, lwd=0.75) + 
+  ylim(c(-17,21))+
   scale_colour_manual(values=c(col[4],col[5],col[3],col[1]))+
   scale_fill_manual(values=c(col[4],col[5],col[3],col[1]))+ 
   #ggtitle("Effect of smoothing DF on SEs")+
-  theme_bw() + xlab("Date") + ylab("Phosphorous effect on blue-green algae") 
+  theme_bw() + xlab("") + ylab("Phosphorous effect on blue-green algae \n (Time-varying slope)") 
 
 panel.c<-ggplot(df_smooth_type, aes(date, est, col=type)) + 
        geom_ribbon(aes(ymin = est-2*se, ymax = est+2*se, y = NULL, fill=type),
@@ -300,11 +359,16 @@ panel.c<-ggplot(df_smooth_type, aes(date, est, col=type)) +
   scale_colour_manual(values=c(col[5],col[4],col[3],col[1]))+
   scale_fill_manual(values=c(col[5],col[4],col[3],col[1]))+ 
   #ggtitle("Effect of choice of GAM smooth")+
-  theme_bw() + xlab("Date") + ylab("Phosphorous effect on blue-green algae") 
-figure2<-ggarrange(panel.a, ggarrange(panel.b, panel.c, nrow=1,labels=c("B.", "C.")),labels=c("A."),nrow=2)
+  #ylim(c(-17,21))+
+  theme_bw() + xlab("") + ylab("") 
 
+bottom_panel <-ggarrange(panel.b, panel.c,widths=c(1.05,1), nrow=1,labels=c("B.", "C."))
+bottom_panel<-annotate_figure(bottom_panel, bottom = textGrob("Date", gp = gpar(cex = 1)))
 
-ggsave(figure2, filename = "Figure_S2_GAMtypes.png", height = 8, width=8.5)
+top_panel<-ggarrange(panel.a,labels=c("A."),nrow=1)
+
+figure2<-ggarrange(top_panel,bottom_panel, nrow=2)
+ggsave(figure2, filename = "Figure_S2_GAMtypes.png",bg="white", height = 8, width=8.5)
 ```
 
 \`\`\`

@@ -22,6 +22,8 @@ library(ggplot2)
 library(lubridate)
 library(marssTMB)
 library(paletteer)
+library(ggpubr)
+library(grid)
 col<-paletteer_d("nationalparkcolors::Everglades")
 
 ```
@@ -196,12 +198,17 @@ coef_gam_AK2 <- data.frame(date = dat_aksalmon$date,
 coefs <- rbind(coef_dlm_lakeWA1, coef_dlm_lakeWA2, coef_dlm_AK1, coef_dlm_AK2,
                coef_gam_lakeWA1, coef_gam_lakeWA2, coef_gam_AK1, coef_gam_AK2)
 
+annotate_Slope<-data.frame(label=c("A.", "B.","E.", "F"),
+                       date=c(1975,1975,dat_lakewa$date[25],dat_lakewa$date[25]),
+                       y=c(7.5,10,4.5,7.75), time_varying=c("slope","slope","slope","slope"))
+
 slope_panel <-ggplot(coefs, aes(date, slope_est, group = time_varying, fill=time_varying, col=time_varying)) + 
   geom_ribbon(aes(ymin=slope_est-2*slope_se, ymax = slope_est+2*slope_se), alpha=0.3, col = NA) + 
   geom_line(aes(lty=time_varying)) + 
   ylab("Time-varying slope") + 
   xlab("") + theme_bw() + 
   ggtitle("Slope")+
+  #ylim(c(-5,11))+
   facet_wrap(~ dataset, scale="free") + 
   #scale_color_viridis_d(option="magma",begin=0.2, end=0.8, name = "Time-varying") + 
   #scale_fill_viridis_d(option="magma",begin=0.2, end=0.8, name = "Time-varying") + 
@@ -220,6 +227,7 @@ int_panel <- ggplot(coefs, aes(date, int_est, group = time_varying, fill=time_va
   xlab("") + theme_bw() + 
   facet_wrap(~ dataset, scale="free") + 
   ggtitle("Intercept")+
+  #ylim(-20,10.5)+
   #scale_color_viridis_d(option="magma",begin=0.2, end=0.8, name = "Time-varying") + 
   #scale_fill_viridis_d(option="magma",begin=0.2, end=0.8, name = "Time-varying") + 
   scale_fill_manual(values=c(col[4],col[5]))+
@@ -231,5 +239,152 @@ int_panel <- ggplot(coefs, aes(date, int_est, group = time_varying, fill=time_va
   )
 int_panel
 
-ggsave("Figure_2_dlmgam_comparison.png", height = 7, width = 7)
+
+Fig4<-ggarrange(slope_panel,int_panel, nrow=1,ncol=2, widths=c(1,1.25))
+annotate_figure(Fig4, bottom = textGrob("Year", gp = gpar(cex = 1)))
+
+
+ggsave("Figure_4_dlmgam_comparison.png", height = 7, width = 11)
+
+#ggsave("Figure_2_dlmgam_comparison.png", height = 7, width = 7)
+```
+
+```{r}
+panel_a<-ggplot(coefs%>%filter(dataset=="Alaska salmon : DLM"), aes(date, slope_est, group = time_varying, fill=time_varying, col=time_varying)) + 
+  geom_ribbon(aes(ymin=slope_est-2*slope_se, ymax = slope_est+2*slope_se), alpha=0.3, col = NA) + 
+  geom_line(aes(lty=time_varying)) + 
+  ylab("") + 
+  xlab("") + theme_bw() +
+  ylim(c(-3.5,11))+
+  scale_fill_manual(values=c(col[4],col[5]))+
+  scale_colour_manual(values=c(col[4],col[5]))+
+  guides(fill="none",colour="none",lty="none")+
+  theme(
+    strip.background = element_rect(fill = "white"),
+    plot.title = element_text(hjust = 0.5)
+  )
+
+panel_b<-ggplot(coefs%>%filter(dataset=="Alaska salmon : GAM"), aes(date, slope_est, group = time_varying, fill=time_varying, col=time_varying)) + 
+  geom_ribbon(aes(ymin=slope_est-2*slope_se, ymax = slope_est+2*slope_se), alpha=0.3, col = NA) + 
+  geom_line(aes(lty=time_varying)) + 
+  ylab("") + 
+  xlab("") + theme_bw() +
+  ylim(c(-3.5,11))+
+  scale_fill_manual(values=c(col[4],col[5]))+
+  scale_colour_manual(values=c(col[4],col[5]))+
+  guides(fill="none",colour="none",lty="none")+
+  theme(
+    strip.background = element_rect(fill = "white"),
+    plot.title = element_text(hjust = 0.5)
+  )
+
+panel_e <- ggplot(coefs%>%filter(dataset=="Lake Washington : DLM"), aes(date, slope_est, group = time_varying, fill=time_varying, col=time_varying)) + 
+  geom_ribbon(aes(ymin=slope_est-2*slope_se, ymax = slope_est+2*slope_se), alpha=0.3, col = NA) + 
+  geom_line(aes(lty=time_varying)) + 
+  ylab("") + 
+  xlab("") + theme_bw() +
+  #ylim(c(-1.5,5.1))+
+   ylim(c(-7,8))+
+  scale_fill_manual(values=c(col[4],col[5]))+
+  scale_colour_manual(values=c(col[4],col[5]))+
+  guides(fill="none",colour="none",lty="none")+
+  theme(
+    strip.background = element_rect(fill = "white"),
+    plot.title = element_text(hjust = 0.5)
+  )
+
+panel_f <-ggplot(coefs%>%filter(dataset=="Lake Washington : GAM"), aes(date, slope_est, group = time_varying, fill=time_varying, col=time_varying)) + 
+  geom_ribbon(aes(ymin=slope_est-2*slope_se, ymax = slope_est+2*slope_se), alpha=0.3, col = NA) + 
+  geom_line(aes(lty=time_varying)) + 
+  ylab("") + 
+  xlab("") + theme_bw() +
+  #ylim(c(-1.5,5.1))+
+   ylim(c(-7,8))+
+  scale_fill_manual(values=c(col[4],col[5]))+
+  scale_colour_manual(values=c(col[4],col[5]))+
+  guides(fill="none",colour="none",lty="none")+
+  theme(
+    strip.background = element_rect(fill = "white"),
+    plot.title = element_text(hjust = 0.5)
+  )
+
+
+fig_slope=ggarrange(panel_a, panel_b, panel_e,panel_f, nrow=2,ncol=2,
+           labels = c("A.", "B.", "E.", "F."))
+fig_slope_y<-annotate_figure(fig_slope, left = textGrob("Time-varying slope",rot=90,gp = gpar(cex = 1)))
+
+
+
+panel_c<-ggplot(coefs%>%filter(dataset=="Alaska salmon : DLM"), aes(date, int_est, group = time_varying, fill=time_varying, col=time_varying)) + 
+  geom_ribbon(aes(ymin=int_est-2*int_se, ymax = int_est+2*int_se), alpha=0.3, col = NA) + 
+  geom_line(aes(lty=time_varying)) + 
+  ylab("") + 
+  xlab("") + theme_bw() + 
+  ylim(-16,11)+
+    guides(fill="none",colour="none",lty="none")+
+  scale_fill_manual(values=c(col[4],col[5]))+
+  scale_colour_manual(values=c(col[4],col[5]))+
+  theme(
+    strip.background = element_rect(fill = "white"),
+    plot.title = element_text(hjust = 0.5)
+  )
+
+panel_d<-ggplot(coefs%>%filter(dataset=="Alaska salmon : GAM"), aes(date, int_est, group = time_varying, fill=time_varying, col=time_varying)) + 
+  geom_ribbon(aes(ymin=int_est-2*int_se, ymax = int_est+2*int_se), alpha=0.3, col = NA) + 
+  geom_line(aes(lty=time_varying)) + 
+  ylab("") + 
+  xlab("") + theme_bw() + 
+  ylim(-16,11)+
+  scale_fill_manual(values=c(col[4],col[5]))+
+  scale_colour_manual(values=c(col[4],col[5]))+
+  theme(
+    strip.background = element_rect(fill = "white"),
+    plot.title = element_text(hjust = 0.5)
+  )
+
+panel_g<-ggplot(coefs%>%filter(dataset=="Lake Washington : DLM"), aes(date, int_est, group = time_varying, fill=time_varying, col=time_varying)) + 
+  geom_ribbon(aes(ymin=int_est-2*int_se, ymax = int_est+2*int_se), alpha=0.3, col = NA) + 
+  geom_line(aes(lty=time_varying)) + 
+  ylab("") + 
+  xlab("") + theme_bw() + 
+    ylim(-8.5,4.5)+
+    guides(fill="none",colour="none",lty="none")+
+  scale_fill_manual(values=c(col[4],col[5]))+
+  scale_colour_manual(values=c(col[4],col[5]))+
+  theme(
+    strip.background = element_rect(fill = "white"),
+    plot.title = element_text(hjust = 0.5)
+  )
+panel_h<-ggplot(coefs%>%filter(dataset=="Lake Washington : GAM"), aes(date, int_est, group = time_varying, fill=time_varying, col=time_varying)) + 
+  geom_ribbon(aes(ymin=int_est-2*int_se, ymax = int_est+2*int_se), alpha=0.3, col = NA) + 
+  geom_line(aes(lty=time_varying)) + 
+  ylab("") + 
+  xlab("") + theme_bw() + 
+  ylim(-8.5,4.5)+
+    guides(fill="none",colour="none",lty="none")+
+  scale_fill_manual(values=c(col[4],col[5]))+
+  scale_colour_manual(values=c(col[4],col[5]))+
+  theme(
+    strip.background = element_rect(fill = "white"),
+    plot.title = element_text(hjust = 0.5)
+  )
+
+
+top<-ggarrange(panel_c, panel_d, nrow=1,ncol=2,
+           labels = c("C.", "D."), widths=c(1,1.75))
+bottom<-ggarrange(panel_g, panel_h,nrow=1,ncol=3,
+           labels = c("G.", "H.",""), widths=c(1,1,0.71))
+arranged_int<-ggarrange(top,bottom, nrow=2)
+
+fig_int_y<-annotate_figure(arranged_int, left = textGrob("Time-varying intercept",rot=90,gp = gpar(cex = 1)))
+
+
+Fig_4 <-ggarrange(fig_slope_y, fig_int_y,ncol=2,widths=c(1,1.25))
+annotate_figure(Fig_4, bottom = textGrob("Year", gp = gpar(cex = 1)))
+
+
+ggsave("Figure_4_dlmgam_comparison.png", height = 7, width = 11, bg = "white")
+
+
+
 ```
