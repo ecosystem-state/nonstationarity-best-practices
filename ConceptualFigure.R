@@ -7,8 +7,8 @@ library(lubridate)
 library(viridis)
 library(paletteer)
 library(ggpubr)
-#set.seed(100)
 set.seed(1035)
+set.seed(9450)
 col<-paletteer_d("nationalparkcolors::Everglades")
 col2<-col[2:4]
 # defining the mean and varince of the different parameter distributions
@@ -39,7 +39,7 @@ ystart<-1950
 
 simulated<-simulated%>%
   mutate(Year=seq(ystart,ystart+sum(lengths)-1,1))%>%# adding a year column for plots
-  mutate(xdata=rnorm(sum(lengths),1,0.2))%>%
+  mutate(xdata=rnorm(sum(lengths),0,0.2))%>%
   mutate(data1 = parameter*xdata+parameter_stat)%>%
   mutate(data2 =parameter_stat*xdata+parameter)%>%
   mutate(data3 =parameter*xdata+parameter)%>%
@@ -95,7 +95,7 @@ cplot<-ggplot(data=simulated_results,) +
   ylab("Response")+
   #geom_ribbon(aes(y=mean,ymax=ymax,ymin=ymin))
   theme_bw()+
-  ylim(c(-2,2))+
+ # ylim(c(-1,1))+
   theme(plot.title = element_text(hjust = 0.5))+ 
   theme(legend.position="none")
 cplot
@@ -110,7 +110,7 @@ dplot<-ggplot(data=simulated_results,) +
   scale_fill_manual(values=col2,labels = c("1950 - 1966", "1966 - 1986", "1986 - 2011"))+
   xlab("Driver")+
   ylab("")+
-  ylim(c(-2,2))+
+ # ylim(c(-1,1))+
   theme_bw()+
   theme(plot.title = element_text(hjust = 0.5))+ 
   theme(legend.position="none")
@@ -127,7 +127,7 @@ eplot<-ggplot(data=simulated_results) +
   ylab("")+
   ggtitle("Time-Varying Slope & Intercept")+
   theme_bw()+ 
-  ylim(c(-2,2))+
+ # ylim(c(-1,1))+
  # theme(legend.position="none")+
   theme(plot.title = element_text(hjust = 0.5))
 eplot
@@ -150,7 +150,7 @@ fplot<-ggplot(data=simulated,aes(x=Year,y=sim,color=period,fill=period)) +
   theme(legend.position="none")
 fplot
 
-gplot<-ggplot(data=simulated, aes(x=sim,group=period,fill=period)) +
+ gplot<-ggplot(data=simulated, aes(x=sim,group=period,fill=period)) +
   geom_density(alpha=0.8)+
   xlim(c(-1,1))+
   scale_fill_manual(values=col2,labels = c("1950 - 1966", "1966 - 1986", "1986 - 2011"))+
