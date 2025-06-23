@@ -77,6 +77,7 @@ salmon <- as.vector(dat2$salmon_DFA)
 
 ccf(sst, salmon)
 ```
+
 Use a lag of 3 months?
 
 ```{r}
@@ -86,7 +87,8 @@ dat2 <- dat2[-c(1:lag_n),]
 ```
 
 ## DLMs
-Define the model. 
+
+Define the model.
 
 ```{r}
 
@@ -143,6 +145,7 @@ ggplot(dat2, aes(year, pred)) +
   theme_bw() + 
   geom_point(aes(year,salmon_DFA), col="red",alpha=0.5)
 ```
+
 ## GAMs
 
 Let's fit the same model with a GAM

@@ -21,6 +21,7 @@ library(ggplot2)
 library(lubridate)
 library(viridis)
 library(paletteer)
+library(ggpubr)
 
 col<-paletteer_d("nationalparkcolors::Everglades")
 ```
@@ -85,9 +86,11 @@ lag_n <- 5
 dat$lagged_zp <- c(rep(NA, lag_n), dat$zp[1:(nrow(dat)-lag_n)]) 
 dat <- dat[-c(1:lag_n),]
 ```
+
 ##DLMs
 
 Define the model – this block is basically copied from the MARSS book (salmon survival case study)
+
 ```{r}
 m <- 2
 TT <- nrow(dat)
@@ -115,6 +118,7 @@ control = list(maxit=4000), method="TMB")
 
 
 ```
+
 Let’s put the state estimates back into the original dataframe and do some plotting. The slope is generally positive, which is what we expect – and exhibits clear variation through time
 
 ```{r}
@@ -140,8 +144,6 @@ xlab("Date") +
 theme_bw() +
 geom_point(aes(date,y_adj), col="red",alpha=0.5)
 ```
-
-
 
 ## GAMs
 
@@ -363,11 +365,12 @@ panel.c<-ggplot(df_smooth_type, aes(date, est, col=type)) +
   theme_bw() + xlab("") + ylab("") 
 
 bottom_panel <-ggarrange(panel.b, panel.c,widths=c(1.05,1), nrow=1,labels=c("B.", "C."))
-bottom_panel<-annotate_figure(bottom_panel, bottom = textGrob("Date", gp = gpar(cex = 1)))
+bottom_panel<-annotate_figure(bottom_panel, bottom = text_grob("Date"))
 
 top_panel<-ggarrange(panel.a,labels=c("A."),nrow=1)
 
 figure2<-ggarrange(top_panel,bottom_panel, nrow=2)
+figure2
 ggsave(figure2, filename = "Figure_S2_GAMtypes.png",bg="white", height = 8, width=8.5)
 ```
 

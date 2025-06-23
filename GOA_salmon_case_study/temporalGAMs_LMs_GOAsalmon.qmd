@@ -73,6 +73,7 @@ mod_int<-lm(salmon_DFA~1, data=dat2) # intercept only
 AIC(mod_period) 
 AIC(mod_int)
 ```
+
 ## A linear model that includes period is better than an intercept-only model. Now include sst as the slope parameter interacting with period
 
 ```{r}
@@ -86,7 +87,8 @@ mod.sum %>%
   knitr::kable(.)
 
 ```
-# Including sst * period is better than sst + period. View full model results.
+
+# Including sst \* period is better than sst + period. View full model results.
 
 ```{r}
 mod.results <-data.table(coef(summary(mod_sst.period.int)), keep.rownames = 'term')
@@ -112,6 +114,7 @@ TS_slm<- ggplot()+
 TS_slm
 Fit_slm
 ```
+
 ## Time to fit a temporally-structured GAM
 
 ```{r}
@@ -150,6 +153,3 @@ bp.y <- breakpoints(y.ts ~ 1)
 summary(bp.y) 
 prediction2[26,]
 ```
-
-
-
