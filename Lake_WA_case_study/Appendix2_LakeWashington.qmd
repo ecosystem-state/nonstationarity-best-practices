@@ -1,7 +1,15 @@
 ---
-title: "Lake WA Supplement"
+title: "Appendix 2: Lake Washington Analysis"
 format: pdf
 editor: visual
+crossref:
+  custom:
+    - kind: float
+      key: suppfig
+      latex-env: suppfig
+      reference-prefix: Figure S
+      space-before-numbering: false
+      latex-list-of-description: Supplementary Figure
 ---
 
 ```{r setup, include=FALSE}
@@ -26,7 +34,7 @@ library(ggpubr)
 col<-paletteer_d("nationalparkcolors::Everglades")
 ```
 
-Here we show the GAM and DLM analysis for the Lake Washington dataset. For complete code, see the [full quarto document](https://github.com/ecosystem-state/nonstationarity-best-practices/blob/main/Lake_WA_case_study/LakeWASupplement.qmd) 
+Here we show the GAM and DLM analysis for the Lake Washington dataset. For complete code, see the [full quarto document](https://github.com/ecosystem-state/nonstationarity-best-practices/blob/main/Lake_WA_case_study/LakeWASupplement.qmd)
 
 ## Data Processing
 
@@ -35,21 +43,32 @@ dat <- as.data.frame(MARSS::lakeWAplanktonRaw)
 dat$date <- make_date(dat$Year, dat$Month, day = 1)
 ```
 
-In Lake WA the major change ecosystem change is related to sewage in the lake – adding wastewater plants in the 1960s reduced phosphorous (TP) and in turn, blue green algae. We can see this by plotting the raw data:
+In Lake WA the major change ecosystem change is related to sewage in the lake – adding wastewater plants in the 1960s reduced phosphorous (@suppfig-TSphos) and in turn, blue green algae (@suppfig-TSbg). We can see this by plotting the raw data:
 
 ```{r, include=FALSE}
 p1 <- ggplot(dat, aes(date, TP)) + 
-  geom_point() + ylab("Total phosphorous") + xlab("") + theme_bw()
+  geom_point() + ylab("Total phosphorus") + xlab("") + theme_bw()
 p2 <- ggplot(dat, aes(date, log(Bluegreens+1))) + 
   geom_point() + ylab("Ln Blue-green algae") + xlab("") + theme_bw()
 #gridExtra::grid.arrange(p1,p2,nrow=2)
 
 ```
 
+::: {#suppfig-TSphos}
 ```{r, echo=FALSE}
 print(p1)
+```
+
+Time series of total phosphorus in Lake Washington
+:::
+
+::: {#suppfig-TSbg}
+```{r, echo=FALSE}
 print(p2)
 ```
+
+Time series of bluegreen algae (cyanobacteria) abundance in Lake Washington
+:::
 
 We can then use the MARSS package to fit a DLM. We'll filter the data to only use counts before 1974, and log transform densities. We also z-score the covariate. This is a good example of imperfect data – there's a couple of missing observations in the covariate, which we can't have in a DLM or GAM – so let's just fill them in with a spline. We can do this as follows:
 
@@ -80,11 +99,13 @@ dat <- dplyr::group_by(dat, Month) %>%
 
 Last, we should look at the lags between driver and response relationships. The CCF here indicates a 2-4 month lag, where TP and algae are more strongly associated with one another.
 
+::: {#suppfig-CCF}
 ```{r}
-# 
-
-ccf(dat$y_adj, dat$zp)
+ccf(dat$y_adj, dat$zp, main="CCF")
 ```
+
+A CCF (Cross-Correlation Function) plot that represents the correlation between total phosphorus and blugreen algae abundance as a function of the lag (time difference) between them.
+:::
 
 We'll use a lag of 4 months, which we can apply as follows:
 
@@ -134,17 +155,25 @@ dat$int_se <- dlm_1$states.se[1,]
 
 dat$slope_est <- dlm_1$states[2,]
 dat$slope_se <- dlm_1$states.se[2,]
-ggplot(dat, aes(date, slope_est)) +
+DLM_plot <- ggplot(dat, aes(date, slope_est)) +
 geom_ribbon(aes(ymin=slope_est-2*slope_se, ymax = slope_est+2*slope_se), alpha=0.6) +
 geom_line() + ylab("Time-varying slope") + xlab("") + theme_bw()
 ```
+
+::: {#suppfig-dlmSlope}
+```{r, echo=FALSE}
+DLM_plot
+```
+
+Time-varying slope of the relationship between bluegreen algae (response) and total phosphorus (driver) from a DLM
+:::
 
 We can also plot the fitted values from our model.
 
 ```{r, echo=FALSE}
 pred <- fitted(dlm_1)
 dat$pred <- pred$.fitted
-ggplot(dat, aes(date, pred)) +
+dlmFit<-ggplot(dat, aes(date, pred)) +
 geom_line() +
 ylab("De-seasoned Ln blue-green algae") +
 xlab("Date") +
@@ -152,10 +181,17 @@ theme_bw() +
 geom_point(aes(date,y_adj), col="red",alpha=0.5)
 ```
 
+::: {#suppfig-dlmFit}
+```{r, echo=FALSE}
+dlmFit
+```
+
+Fit of the DLM model with time-varying slope (black line) to observed bluegreen algae abundance (red points).
+:::
+
 ## GAMs
 
 We can fit a GAM model 3 ways, 1) so that the smoother is a function of phosphorus which represents a nonlinear relationship between total phosphorus and bluegreen algae that is not temporally structured thus the relationship is stationary and fixed through time. This is how GAMs are typically structured for ecological analyses. 2) A temporally structured model so that the smooth function of phosphorus varies by time, and 3) a smooth on date as a driver of cyanobacteria where the smooth through time varies by phosphorus level. We show the model predicted cyanobacteria trend through time using these three modeling approaches. While they are quite similar, the predictions diverge sustantially at the end of the time series.
-
 
 ```{r}
 
@@ -173,7 +209,6 @@ df_cr1 <- data.frame(x = plot_cr1[[1]]$x,
 est = plot_cr1[[1]]$fit,
 se = plot_cr1[[1]]$se)
 ```
-
 
 ```{r, echo=FALSE}
 p1 <- ggplot(df_cr1, aes(x, est)) +
@@ -206,8 +241,15 @@ p2 <- ggplot(d_all, aes(date, y_adj, col = smooth)) +
   scale_color_viridis_d(option="magma",begin=0.2, end=0.8)
 ggsave(p2, filename = "Figure_S2_nonlinear_v_nonstationary.png", height = 5, width=7)
 
+```
+
+::: {#suppfig-gamFit}
+```{r, echo=FALSE}
 p2
 ```
+
+Fit of the GAM models (lines) to observed bluegreen algae (cyanobacteria) abundance (black points). Colors denote different specifications of the smoother functions.
+:::
 
 ```{r, include= FALSE}
 # extract the smooth estimates with SEs to compare to DLM
@@ -249,11 +291,9 @@ combo <- (p1 + p2 + p3 + p4) +
 ggsave(combo, filename = "Fig_1.png", height=7, width=7)
 ```
 
+There are a few more analysis approaches for running GAMs including the choice of smoother function (@suppfig-gamFit & @suppfig-gamSmooth) and the number of knots, or the "wiggliness" (@suppfig-gamknots) of the smoothed relationship. We can plot these different results and include the results of the DLM for comparison, note that 'cr' and 'tp' are so similar they are difficult to discern from the plot. We can do a similar comparison for the choice of k. Here we compare a four different numbers of knots (@suppfig-gamknots).
 
-There are a few more analysis approaches for running GAMs including the choice of smoother function and the number of knots, or the "wiggliness" of the smoothed relationship. We can plot these different results and include the results of the DLM for comparison, note that 'cr' and 'tp' are so similar they are difficult to discern from the plot.
-
-
-```{r}
+```{r, echo=FALSE}
 
 # The 'sp' parameter also controls the penalty on smoothing (below)
 dat$n_date <- as.numeric(as.factor(dat$date))
@@ -266,12 +306,10 @@ gam_gp <- gam_cr <- gam(y_adj ~ s(n_date, by = lagged_zp, bs = "gp",k=nrow(dat))
 
 ```
 
-
-
 ```{r, include=FALSE}
 dat$pred_gam <- predict(gam_tp)
 
-ggplot(dat, aes(date, pred)) + 
+gam_smooth<- ggplot(dat, aes(date, pred)) + 
   geom_line() + ylab("De-seasoned Ln blue-green algae") + 
   xlab("Date") + theme_bw() + 
   geom_point(aes(date,y_adj), col="red",alpha=0.5) + 
@@ -300,17 +338,22 @@ df_smooth <- rbind(df_cr, df_tp, df_gp, df_dlm)
 
 #df_smooth <- rbind(df_cr,  df_gp)
 df_smooth_type<-df_smooth
-ggplot(df_smooth, aes(date, est, col=type, fill=type)) + 
+gam_smooth<-ggplot(df_smooth, aes(date, est, col=type, fill=type)) + 
   geom_line(aes(date,est-2*se), alpha=0.5, linetype=2) + 
   geom_line(aes(date,est+2*se), alpha=0.5, linetype=2) + 
   geom_line(aes(date,est), alpha=0.5) + 
   theme_bw() + 
   xlab("Date") + 
-  ylab("Phosphorous effect on blue-green algae") + 
-  ggtitle("Effect of choice of GAM smooth")
+  ylab("Phosphorous effect on blue-green algae (Slope)") 
 ```
 
-We can do a similar comparison for the choice of k. Here we compare a four different numbers of knots:
+::: {#suppfig-gamSmooth}
+```{r, echo=FALSE}
+gam_smooth
+```
+
+Effect of the choice of smoother function on estimates of time-varying slope parameter where color denotes model type. 3 GAM smoother types (cr, tp, gp) are contrasted with a DLM (dlm).
+:::
 
 ```{r, include=FALSE}
 gam_cr30 <- gam(y_adj ~ s(n_date, by = lagged_zp, bs = "cr",
@@ -345,15 +388,21 @@ df_smooth_knots<-df_smooth
 
 ```{r, echo=FALSE}
 
-ggplot(df_smooth, aes(date, est, col=knots, fill=knots)) + 
+gamknots <- ggplot(df_smooth, aes(date, est, col=knots, fill=knots)) + 
   geom_line(aes(date,est-2*se), alpha=0.5, linetype=2) + 
   geom_line(aes(date,est+2*se), alpha=0.5, linetype=2) + 
   geom_line(aes(date,est), alpha=0.5) + 
-  theme_bw() + xlab("Date") + ylab("Phosphorous effect on blue-green algae") + 
-  ggtitle("Effect of smoothing DF on SEs")
+  theme_bw() + xlab("Date") + ylab("Phosphorous effect on blue-green algae (slope)") 
 
 ```
 
+::: {#suppfig-gamknots}
+```{r, echo=FALSE}
+gamknots
+```
+
+Effect of smoothing degrees of freedom on the standard errors of the estimates of time-varying slope parameter where color denotes model type. We show 4 distinct knots (colors)
+:::
 
 ```{r, include=FALSE}
 
@@ -404,5 +453,3 @@ figure2<-ggarrange(top_panel,bottom_panel, nrow=2)
 figure2
 ggsave(figure2, filename = "Figure_S2_GAMtypes.png",bg="white", height = 8, width=8.5)
 ```
-
-\`\`\`

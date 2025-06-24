@@ -1,0 +1,163 @@
+---
+title: "Appendix 3: Gulf of Alaska salmon analysis"
+format: pdf
+editor: source
+crossref:
+  custom:
+    - kind: float
+      key: suppfig
+      latex-env: suppfig
+      reference-prefix: Figure S
+      space-before-numbering: false
+      latex-list-of-description: Supplementary Figure
+---
+
+```{r setup, include = FALSE}
+
+knitr::opts_chunk$set(
+  warning = FALSE,  
+  error = FALSE,    
+  message = FALSE
+)
+
+library(MARSS)
+library(mgcv)
+library(dplyr)
+library(forecast)
+library(ggplot2)
+library(lubridate)
+library(marssTMB)
+library(tidyverse)
+library(strucchange)
+library(data.table)
+```
+
+## Data
+
+```{r}
+# Load salmon timeseries collapsed into DFA trend
+salm.dat <- readRDS(here::here("GOA_salmon_case_study/Data/dfa_trend.rds")) 
+
+# Load 3-year running mean winter SST timeseries
+sst.dat <- readRDS(here::here("GOA_salmon_case_study/Data/winterSST_3yr_running_mean.rds")) 
+
+# Bind
+right_join(salm.dat, sst.dat) -> dat
+
+# Plot salmon DFA
+ggplot(dat, aes(year, salmon_DFA)) +
+  theme_bw() +
+  geom_line() +
+  geom_hline(yintercept = 0) +
+  geom_point() +
+  geom_errorbar(aes(x=year, ymin=conf.low, ymax=conf.high)) +
+  xlab("") +
+  ylab("DFA trend")
+
+# Plot sst
+ggplot(dat, aes(year, sst_3yr_running_mean)) +
+  theme_bw() +
+  geom_line() +
+  geom_point() +
+  xlab("") +
+  ylab("3-year running mean SST")
+
+# Scale predictor sst
+dat %>%
+  mutate(z_sst = scale(sst_3yr_running_mean)) %>%
+  na.omit() -> dat2
+```
+
+## Start with evaluate salmon catch using linear models with periods defined a-priori as before and after 1988/1989 (from Litzow et al. 2018)
+
+```{r}
+dat2 %>%
+  mutate(period = case_when((year <= 1988) ~ "early",
+                            (year > 1988) ~ "late")) -> dat2
+
+mod_period<-lm(salmon_DFA~as.factor(period), data=dat2) # with period
+mod_int<-lm(salmon_DFA~1, data=dat2) # intercept only
+
+AIC(mod_period) 
+AIC(mod_int)
+```
+
+## A linear model that includes period is better than an intercept-only model. Now include sst as the slope parameter interacting with period
+
+```{r}
+mod_sst.period.int<-lm(salmon_DFA~z_sst*as.factor(period), data=dat2) # with interaction
+mod_sst.period<-lm(salmon_DFA~z_sst+as.factor(period), data=dat2) # no interaction
+
+mod.sum <- data.frame(Covariates = "SST", Period = round(AIC(mod_sst.period), 2),
+                      Interaction = round(AIC(mod_sst.period.int), 2))
+
+mod.sum %>%
+  knitr::kable(.)
+
+```
+
+# Including sst \* period is better than sst + period. View full model results.
+
+```{r}
+mod.results <-data.table(coef(summary(mod_sst.period.int)), keep.rownames = 'term')
+mod.results %>%
+  knitr::kable(.)
+
+Fit_slm<-ggplot(data=dat2, aes(group=period,col=period, y=salmon_DFA,x=z_sst)) +
+  stat_smooth(method = "lm")+
+  scale_colour_discrete(labels=c("before 1988/89", "after 1988/89"))+
+  geom_point()+
+  ylab("Salmon trend")+
+  xlab("SST")
+
+TS_slm<- ggplot()+
+  geom_line(dat2, mapping = aes(x=year, y=scale(salmon_DFA)), color = "salmon", size = 1) +
+  geom_line(dat2, mapping = aes(x = year, y = z_sst), color = "darkblue", size = 1)+
+  geom_point(dat2, mapping = aes(x=year, y=scale(salmon_DFA)), color = "salmon") +
+  geom_point(dat2, mapping = aes(x = year, y = z_sst), color = "darkblue")+
+  scale_colour_discrete(labels=c("salmon trend", "SST"))+
+  geom_vline(xintercept=1988, lty=2)+
+  xlab("Year")
+
+TS_slm
+Fit_slm
+```
+
+## Time to fit a temporally-structured GAM
+
+```{r}
+prediction=data.frame(prediction=predict(mod_sst.period.int),year=unique(dat2$year))
+ggplot(data=prediction,aes(y=prediction, x=year)) +
+  #facet_wrap(~area1,scales="free_y") +
+ # geom_point()+
+  geom_point(data=dat2, aes(y=salmon_DFA, x=year), color = "salmon")+
+  geom_line()+
+  ggtitle('Linear Model')+
+  geom_vline(xintercept=1988, lty=2)
+
+y.ts <- ts(data=prediction, frequency=1)
+# fit breakpoint model
+bp.y <- breakpoints(y.ts ~ 1)
+summary(bp.y) 
+prediction[26,]
+gam1<-gam(salmon_DFA~s(year, by=z_sst,k=10), data=dat2)
+#plot(gam1)
+gam2<-gam(salmon_DFA~s(year,k=10), data=dat2)
+gam3<-gam(salmon_DFA~s(z_sst,k=10), data=dat2)
+
+
+prediction2=data.frame(prediction=predict(gam1),year=unique(dat2$year))
+ggplot(data=prediction2,aes(y=prediction, x=year)) +
+  #facet_wrap(~area1,scales="free_y") +
+  #geom_point()+
+  geom_line()+
+    geom_point(data=dat2, aes(y=salmon_DFA, x=year), color = "salmon")+
+  ggtitle('GAM')+
+  geom_vline(xintercept=1988, lty=2)
+
+y.ts <- ts(data=prediction2, frequency=1)
+# fit breakpoint model
+bp.y <- breakpoints(y.ts ~ 1)
+summary(bp.y) 
+prediction2[26,]
+```
