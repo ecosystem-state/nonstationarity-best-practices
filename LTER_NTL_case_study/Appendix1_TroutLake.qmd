@@ -4,6 +4,10 @@ format: pdf
 editor: visual
 ---
 
+## Overview
+
+Here we show the LM, and GAM  analysis for the Trout Lake dataset. For complete code, see the [full quarto document](https://github.com/ecosystem-state/nonstationarity-best-practices/blob/main/GOA_salmon_case_study/Appendix3_GoASalmon.qmd)
+
 ## 
 
 Approach for running LTER-NTL Trout Lake data using temporally structured GAMs and linear regression models with time periods defined a-priori.

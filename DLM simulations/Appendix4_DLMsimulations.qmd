@@ -6,7 +6,7 @@ editor: visual
 
 ## Overview
 
-The simulation code for this comparison is in [simulations.R](https://github.com/ecosystem-state/nonstationarity-best-practices/blob/main/DLM%20simulations/simulations.R). As a brief overview, we are interested in understanding what factors contribute to models with time-varying slopes not performing well - specifically, we found with the GoA salmon dataset that fitting both a time-varying slope and a time-varying intercept had convergence issues. All of these models are constructed using the `MARSS` R package, and we are only considering models with time-varying intercepts and slopes here.
+The simulation code for this comparison is in [simulations.R](https://github.com/ecosystem-state/nonstationarity-best-practices/blob/main/DLM%20simulations/simulations.R). Complete code for this file can be found [here](https://github.com/ecosystem-state/nonstationarity-best-practices/blob/main/DLM%20simulations/Appendix4_DLMsimulations.qmd). As a brief overview, we are interested in understanding what factors contribute to models with time-varying slopes not performing well - specifically, we found with the GoA salmon dataset that fitting both a time-varying slope and a time-varying intercept had convergence issues. All of these models are constructed using the `MARSS` R package, and we are only considering models with time-varying intercepts and slopes here.
 
 #### Parameters
 
@@ -48,7 +48,7 @@ ggplot(subpars, aes(y = rho_cov, x = n_years, group=n_years)) +
   geom_boxplot(outlier.color =NA) + 
   facet_wrap(~ coef_sd) + 
   xlab("Time series length") + 
-  ylab("Correlation in estimated vs true slope")
+  ylab("Correlation in estimated vs true slope")+ theme_bw()
 
 ```
 
@@ -61,7 +61,7 @@ We see a weak effect of covariate autocorrelation; focusing on time series with 
 ggplot(dplyr::filter(subpars, coef_sd==0.1, n_years == 100), aes(y = rho_cov, x = rho, group=rho)) + 
    geom_boxplot(outlier.color =NA) + 
   xlab("Covariate autocorrelation") + 
-  ylab("Correlation in estimated vs true slope")
+  ylab("Correlation in estimated vs true slope")+ theme_bw()
  
 # # The ability to recover the trend doesn't really depend on 
 # # trends in the covariate time series
@@ -78,7 +78,7 @@ We also see little effect of a linear trend in the covariate; some of the scenar
 ggplot(dplyr::filter(subpars, coef_sd==0.1, n_years == 100), aes(y = rho_cov, x = covar_trend, group=covar_trend)) + 
    geom_boxplot(outlier.color =NA) + 
   xlab("Covariate trend") + 
-  ylab("Correlation in estimated vs true slope")
+  ylab("Correlation in estimated vs true slope")+ theme_bw()
  
 # # The ability to recover the trend doesn't really depend on 
 # # trends in the covariate time series
