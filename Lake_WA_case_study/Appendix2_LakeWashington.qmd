@@ -34,7 +34,7 @@ library(ggpubr)
 col<-paletteer_d("nationalparkcolors::Everglades")
 ```
 
-Here we show the GAM and DLM analysis for the Lake Washington dataset. For complete code, see the [full quarto document](https://github.com/ecosystem-state/nonstationarity-best-practices/blob/main/Lake_WA_case_study/LakeWASupplement.qmd)
+Here we show the GAM and DLM analysis for the Lake Washington dataset. For complete code, see the [full quarto document](https://github.com/ecosystem-state/nonstationarity-best-practices/blob/main/Lake_WA_case_study/Appendix2_LakeWashington.qmd)
 
 ## Data Processing
 

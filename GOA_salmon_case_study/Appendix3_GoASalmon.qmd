@@ -10,6 +10,12 @@ crossref:
       reference-prefix: Figure S
       space-before-numbering: false
       latex-list-of-description: Supplementary Figure
+    - kind: float
+      key: supptab
+      latex-env: supptab
+      reference-prefix: Table S
+      space-before-numbering: false
+      latex-list-of-description: Supplementary Table
 ---
 
 ```{r setup, include = FALSE}
@@ -19,7 +25,7 @@ knitr::opts_chunk$set(
   error = FALSE,    
   message = FALSE
 )
-
+library(paletteer)
 library(MARSS)
 library(mgcv)
 library(dplyr)
@@ -32,9 +38,13 @@ library(strucchange)
 library(data.table)
 ```
 
-## Data
+Here we show the LM, GAM, and DLM analysis for the Gulf of Alaska salmon dataset. For complete code, see the [full quarto document](https://github.com/ecosystem-state/nonstationarity-best-practices/blob/main/GOA_salmon_case_study/Appendix3_GoASalmon.qmd)
 
-```{r}
+## Data Processing
+
+First, we standardize and examine the trends in SST and salmon abundace from Litzow et al. 2018. 
+
+```{r, echo=FALSE}
 # Load salmon timeseries collapsed into DFA trend
 salm.dat <- readRDS(here::here("GOA_salmon_case_study/Data/dfa_trend.rds")) 
 
@@ -45,17 +55,17 @@ sst.dat <- readRDS(here::here("GOA_salmon_case_study/Data/winterSST_3yr_running_
 right_join(salm.dat, sst.dat) -> dat
 
 # Plot salmon DFA
-ggplot(dat, aes(year, salmon_DFA)) +
+salmon_DFA<- ggplot(dat, aes(year, salmon_DFA)) +
   theme_bw() +
   geom_line() +
   geom_hline(yintercept = 0) +
   geom_point() +
   geom_errorbar(aes(x=year, ymin=conf.low, ymax=conf.high)) +
   xlab("") +
-  ylab("DFA trend")
+  ylab("Salmon Trend")
 
 # Plot sst
-ggplot(dat, aes(year, sst_3yr_running_mean)) +
+SST_TS<- ggplot(dat, aes(year, sst_3yr_running_mean)) +
   theme_bw() +
   geom_line() +
   geom_point() +
@@ -68,47 +78,86 @@ dat %>%
   na.omit() -> dat2
 ```
 
-## Start with evaluate salmon catch using linear models with periods defined a-priori as before and after 1988/1989 (from Litzow et al. 2018)
+::: {#suppfig-TSsalmon}
+```{r, echo=FALSE}
+salmon_DFA
+```
+Time series of salmon catch from Lizow et al. 2018
+:::
 
-```{r}
+::: {#suppfig-TSsst}
+```{r, echo=FALSE}
+SST_TS
+```
+Time series of sea surface temperature anomalies from Lizow et al. 2018
+:::
+
+## LM
+
+We start our investigation using linear models, to evaluate the relationship between salmon catch and SST anomalies  with periods defined a-priori as before and after 1988/1989 (from Litzow et al. 2018). Previous investigations used this approach, and while we primarily discuss DLMs and GAMs for this dataset in the main text, we include this illustrative example here for completeness and comparability to the previous study. 
+
+We compare linear model structures using classic model selection criteria, AIC. First, we examine a 1) intercept only model, 2) salmon abundance with period as a predictor, 3) salmon abundance with period and SST anomalies as predictors, and 4) an interaction between SST anomalies and period. This shows that model 2 is a better fit to the data than model one illustrating that a time-varying intercept is an improvement to model fit than a time-invariant intercept. Similarly, model 4 is the best model showing that a time-varying slope with SST is an improvement to a time-invariant slope (@supptab-AIC).
+
+```{r, echo=FALSE}
 dat2 %>%
   mutate(period = case_when((year <= 1988) ~ "early",
                             (year > 1988) ~ "late")) -> dat2
 
 mod_period<-lm(salmon_DFA~as.factor(period), data=dat2) # with period
 mod_int<-lm(salmon_DFA~1, data=dat2) # intercept only
-
-AIC(mod_period) 
-AIC(mod_int)
-```
-
-## A linear model that includes period is better than an intercept-only model. Now include sst as the slope parameter interacting with period
-
-```{r}
 mod_sst.period.int<-lm(salmon_DFA~z_sst*as.factor(period), data=dat2) # with interaction
 mod_sst.period<-lm(salmon_DFA~z_sst+as.factor(period), data=dat2) # no interaction
+mod_sst.period.noint<-lm(salmon_DFA~0+z_sst:as.factor(period), data=dat2) # no interaction
 
-mod.sum <- data.frame(Covariates = "SST", Period = round(AIC(mod_sst.period), 2),
-                      Interaction = round(AIC(mod_sst.period.int), 2))
 
-mod.sum %>%
-  knitr::kable(.)
+mod_int_AIC <- AIC(mod_int)
+mod_mod_period <- AIC(mod_period) 
+mod_sst.period_AIC <- AIC(mod_sst.period)
+mod_sst.period.int_AIC <- AIC(mod_sst.period.int) 
+mod_sst.period.noint_AIC <- AIC(mod_sst.period.noint) 
+
+model_names <- c("1. Intercept only", "2. Intercept by period only \n (time-varying intercept)", 
+"3. Intercept by period and SST", "4. Interaction between SST and period \n (time-varying slope and intercept)", "5. Time-varying slope")
+AIC <- c(mod_int_AIC, mod_mod_period, mod_sst.period_AIC,mod_sst.period.int_AIC,mod_sst.period.noint_AIC)
+AIC_tab <-data.frame(Model = model_names, AIC = round(AIC, 2))
 
 ```
 
-# Including sst \* period is better than sst + period. View full model results.
+::: {#supptab-AIC}
 
-```{r}
-mod.results <-data.table(coef(summary(mod_sst.period.int)), keep.rownames = 'term')
-mod.results %>%
-  knitr::kable(.)
+```{r, echo=FALSE}
+knitr::kable(head(AIC_tab))
+```
+AIC values for four linear models
+::: 
+
+{{< pagebreak >}}
+
+Functionally, model 4 has a time-varying slope and a time-varying intercept which we can see by both plotting the relationships and examining the model output. We can see a strong positive correlation prior to 1988 (@suppfig-TSslm) followed by a weak negative relationship which is represented in the slopes of the relationship (@supptab-results & @suppfig-fitslm).
+
+```{r, echo = FALSE}
+
+mod.results <-data.table(round(coef(summary(mod_sst.period.int)),2), keep.rownames = 'term')
+
+```
+
+::: {#supptab-results}
+```{r, echo=FALSE}
+
+  knitr::kable(mod.results)
+```
+Summary of the output of the best supported model (model 4)
+:::
+
+```{r, echo = FALSE}
+
 
 Fit_slm<-ggplot(data=dat2, aes(group=period,col=period, y=salmon_DFA,x=z_sst)) +
   stat_smooth(method = "lm")+
   scale_colour_discrete(labels=c("before 1988/89", "after 1988/89"))+
   geom_point()+
   ylab("Salmon trend")+
-  xlab("SST")
+  xlab("SST")+ theme_bw()
 
 TS_slm<- ggplot()+
   geom_line(dat2, mapping = aes(x=year, y=scale(salmon_DFA)), color = "salmon", size = 1) +
@@ -117,47 +166,224 @@ TS_slm<- ggplot()+
   geom_point(dat2, mapping = aes(x = year, y = z_sst), color = "darkblue")+
   scale_colour_discrete(labels=c("salmon trend", "SST"))+
   geom_vline(xintercept=1988, lty=2)+
-  xlab("Year")
+  xlab("Year")+ theme_bw()
+
+```
+
+::: {#suppfig-TSslm}
+```{r, echo=FALSE}
 
 TS_slm
+```
+Time series of scaled salmon catch trend (salmon color) and SST anomalies (dark blue)
+:::
+
+::: {#suppfig-fitslm}
+```{r, echo=FALSE}
 Fit_slm
 ```
+The relationship between salmon catch and SST anomalies before and after the 1988/1989 time periods
+:::
 
-## Time to fit a temporally-structured GAM
+{{< pagebreak >}}
 
-```{r}
-prediction=data.frame(prediction=predict(mod_sst.period.int),year=unique(dat2$year))
-ggplot(data=prediction,aes(y=prediction, x=year)) +
-  #facet_wrap(~area1,scales="free_y") +
- # geom_point()+
-  geom_point(data=dat2, aes(y=salmon_DFA, x=year), color = "salmon")+
-  geom_line()+
-  ggtitle('Linear Model')+
-  geom_vline(xintercept=1988, lty=2)
+## GAM
 
-y.ts <- ts(data=prediction, frequency=1)
-# fit breakpoint model
-bp.y <- breakpoints(y.ts ~ 1)
-summary(bp.y) 
-prediction[26,]
-gam1<-gam(salmon_DFA~s(year, by=z_sst,k=10), data=dat2)
-#plot(gam1)
-gam2<-gam(salmon_DFA~s(year,k=10), data=dat2)
-gam3<-gam(salmon_DFA~s(z_sst,k=10), data=dat2)
+We fit two distinct GAM models to the salmon catch data and SST anomalies to illustrate the differences in a model with a time-varying slope and a time-varying intercept, and a model that only has a time-varying slope. We find that when fitting a time-varying slope and time-varying intercept model, most of the variability in the relationship is explained by the time-varying intercept (@suppfig-tvintgam) while the time-varying slope does not change much through time (@suppfig-tvslopegam). When only a time-varying slope is fit to the data, the slope parameter is much more variable through time (@suppfig-tvslopegam), and looks similar to the slope estimated by the linear models (@suppfig-fitslm). 
+
+```{r,include=FALSE}
+dat_aksalmon <- readRDS("data_for_AK_salmon_example.rds")
+col<-paletteer_d("nationalparkcolors::Everglades")
+#renaming
+dat_aksalmon <- dplyr::rename(dat_aksalmon,
+                              response = salmon_DFA,
+                              driver = z_sst, 
+                              date = year)
+K_AK <- round(0.99*nrow(dat_aksalmon))
+dat_aksalmon$n_date <- seq(1,nrow(dat_aksalmon))
+gam_aksalmon_1 <- gam(response ~ s(n_date,k=K_AK) + s(n_date, by = driver, bs = "gp",k=K_AK), data = dat_aksalmon)
+gam_aksalmon_2 <- gam(response ~ s(n_date, by = driver, bs = "gp",k=K_AK), data = dat_aksalmon)
+
+# extract the smooth estimates with SEs to compare to DLM
+plot_3 <- plot(gam_aksalmon_1, seWithMean = TRUE, n = nrow(dat_aksalmon))
+plot_4 <- plot(gam_aksalmon_2, seWithMean = TRUE, n = nrow(dat_aksalmon))
+
+coef_gam_AK1 <- data.frame(date = dat_aksalmon$date,
+                        int_est = plot_3[[1]]$fit,
+                        int_se = plot_3[[1]]$fit,
+                        slope_est = plot_3[[2]]$fit,
+                        slope_se = plot_3[[2]]$fit,
+                        time_varying = "Intercept + slope",
+                        dataset = "Alaska salmon : GAM")
+coef_gam_AK2 <- data.frame(date = dat_aksalmon$date,
+                        int_est = NA,
+                        int_se = NA,
+                        slope_est = plot_4[[1]]$fit,
+                        slope_se = plot_4[[1]]$se,
+                        time_varying = "Slope",
+                        dataset = "Alaska salmon : GAM")
+
+coefs_gam <- rbind(coef_gam_AK1, coef_gam_AK2)
+
+slope_panel_gam <-ggplot(coefs_gam, aes(date, slope_est, group = time_varying, fill=time_varying, col=time_varying)) + 
+  geom_ribbon(aes(ymin=slope_est-2*slope_se, ymax = slope_est+2*slope_se), alpha=0.3, col = NA) + 
+  geom_line(aes(lty=time_varying)) + 
+  ylab("Time-varying slope") + 
+  xlab("") + theme_bw() + 
+  ggtitle("Slope")+
+  #ylim(c(-5,11))+
+  facet_wrap(~ dataset, scale="free") + 
+  #scale_color_viridis_d(option="magma",begin=0.2, end=0.8, name = "Time-varying") + 
+  #scale_fill_viridis_d(option="magma",begin=0.2, end=0.8, name = "Time-varying") + 
+  scale_fill_manual(values=c(col[4],col[5]))+
+  scale_colour_manual(values=c(col[4],col[5]))+
+  #guides(fill="none",colour="none",lty="none")+
+  theme(
+    strip.background = element_rect(fill = "white"),
+    plot.title = element_text(hjust = 0.5)
+  )
+
+int_panel_gam <- ggplot(coefs_gam, aes(date, int_est, group = time_varying, fill=time_varying, col=time_varying)) + 
+  geom_ribbon(aes(ymin=int_est-2*int_se, ymax = int_est+2*int_se), alpha=0.3, col = NA) + 
+  geom_line(aes(lty=time_varying)) + 
+  ylab("Time-varying intercept") + 
+  xlab("") + theme_bw() + 
+  facet_wrap(~ dataset, scale="free") + 
+  ggtitle("Intercept")+
+  #ylim(-20,10.5)+
+  #scale_color_viridis_d(option="magma",begin=0.2, end=0.8, name = "Time-varying") + 
+  #scale_fill_viridis_d(option="magma",begin=0.2, end=0.8, name = "Time-varying") + 
+  scale_fill_manual(values=c(col[4],col[5]))+
+  scale_colour_manual(values=c(col[4],col[5]))+
+  
+  theme(
+    strip.background = element_rect(fill = "white"),
+    plot.title = element_text(hjust = 0.5)
+  )
 
 
-prediction2=data.frame(prediction=predict(gam1),year=unique(dat2$year))
-ggplot(data=prediction2,aes(y=prediction, x=year)) +
-  #facet_wrap(~area1,scales="free_y") +
-  #geom_point()+
-  geom_line()+
-    geom_point(data=dat2, aes(y=salmon_DFA, x=year), color = "salmon")+
-  ggtitle('GAM')+
-  geom_vline(xintercept=1988, lty=2)
-
-y.ts <- ts(data=prediction2, frequency=1)
-# fit breakpoint model
-bp.y <- breakpoints(y.ts ~ 1)
-summary(bp.y) 
-prediction2[26,]
 ```
+
+::: {#suppfig-tvintgam}
+```{r, echo=FALSE}
+int_panel_gam
+```
+Time-varying intercept of the GAM model representing the relationship between SST anomalies and salmon catch. 
+:::
+
+
+::: {#suppfig-tvslopegam}
+```{r, echo=FALSE}
+slope_panel_gam
+```
+Time-varying slope of the GAM model representing the relationship between SST anomalies and salmon catch. 
+:::
+
+
+
+```{r,include=FALSE}
+
+
+dat <- dat_aksalmon
+m <- 2
+TT <- nrow(dat)
+B <- diag(m)  ## 2x2; Identity
+U <- matrix(0, nrow = m, ncol = 1)  ## 2x1; both elements = 0
+Q <- matrix(list(0), m, m)  ## 2x2; all 0 for now
+diag(Q)[1] <- c("q.alpha")
+diag(Q)[2] <- c("q.beta")
+Z <- array(NA, c(1, m, TT))  ## NxMxT; empty for now
+Z[1, 1, ] <- rep(1, TT)  ## Nx1; 1's for intercept
+Z[1, 2, ] <- dat$driver  ## Nx1; predictor variable
+A <- matrix(0)  ## 1x1; scalar = 0
+R <- matrix("r")  ## 1x1; scalar = r
+## only need starting values for regr parameters
+inits_list <- list(x0 = matrix(c(0, 0), nrow = m))
+## list of model matrices & vectors
+mod_list <- list(B = B, U = U, Q = Q, Z = Z, A = A, R = R)
+# convert response to matrix
+dat_mat <- matrix(dat$response, nrow = 1)
+# fit the model -- crank up the maxit to ensure convergence
+dlm_aksalmon_1 <- MARSS(dat_mat, inits = inits_list, model = mod_list,
+               control = list(maxit=4000), method="TMB")
+
+# Fit a second model with just time-varying slope
+diag(Q)[1] <- 1e-10
+mod_list <- list(B = B, U = U, Q = Q, Z = Z, A = A, R = R)
+dlm_aksalmon_2 <- MARSS(dat_mat, inits = inits_list, model = mod_list,
+               control = list(maxit=4000), method="TMB")
+
+coef_dlm_AK1 <- data.frame(date = dat_aksalmon$date,
+                        int_est = dlm_aksalmon_1$states[1,],
+                        int_se = dlm_aksalmon_1$states.se[1,],
+                        slope_est = dlm_aksalmon_1$states[2,],
+                        slope_se = dlm_aksalmon_1$states.se[2,],
+                        time_varying = "Intercept + slope",
+                        dataset = "Alaska salmon : DLM")
+coef_dlm_AK2 <- data.frame(date = dat_aksalmon$date,
+                        int_est = NA,
+                        int_se = NA,
+                        slope_est = dlm_aksalmon_2$states[2,],
+                        slope_se = dlm_aksalmon_2$states.se[2,],
+                        time_varying = "Slope",
+                        dataset = "Alaska salmon : DLM")
+
+coefs <- rbind(coef_dlm_AK1, coef_dlm_AK2)
+
+slope_panel <-ggplot(coefs, aes(date, slope_est, group = time_varying, fill=time_varying, col=time_varying)) + 
+  geom_ribbon(aes(ymin=slope_est-2*slope_se, ymax = slope_est+2*slope_se), alpha=0.3, col = NA) + 
+  geom_line(aes(lty=time_varying)) + 
+  ylab("Time-varying slope") + 
+  xlab("") + theme_bw() + 
+  ggtitle("Slope")+
+  #ylim(c(-5,11))+
+  facet_wrap(~ dataset, scale="free") + 
+  #scale_color_viridis_d(option="magma",begin=0.2, end=0.8, name = "Time-varying") + 
+  #scale_fill_viridis_d(option="magma",begin=0.2, end=0.8, name = "Time-varying") + 
+  scale_fill_manual(values=c(col[4],col[5]))+
+  scale_colour_manual(values=c(col[4],col[5]))+
+ # guides(fill="none",colour="none",lty="none")+
+  theme(
+    strip.background = element_rect(fill = "white"),
+    plot.title = element_text(hjust = 0.5)
+  )
+
+int_panel <- ggplot(coefs, aes(date, int_est, group = time_varying, fill=time_varying, col=time_varying)) + 
+  geom_ribbon(aes(ymin=int_est-2*int_se, ymax = int_est+2*int_se), alpha=0.3, col = NA) + 
+  geom_line(aes(lty=time_varying)) + 
+  ylab("Time-varying intercept") + 
+  xlab("") + theme_bw() + 
+  facet_wrap(~ dataset, scale="free") + 
+  ggtitle("Intercept")+
+  #ylim(-20,10.5)+
+  #scale_color_viridis_d(option="magma",begin=0.2, end=0.8, name = "Time-varying") + 
+  #scale_fill_viridis_d(option="magma",begin=0.2, end=0.8, name = "Time-varying") + 
+  scale_fill_manual(values=c(col[4],col[5]))+
+  scale_colour_manual(values=c(col[4],col[5]))+
+  
+  theme(
+    strip.background = element_rect(fill = "white"),
+    plot.title = element_text(hjust = 0.5)
+  )
+
+
+```
+
+
+## DLM
+
+We fit two distinct DLM models to the salmon catch data and SST anomalies to compare to the results of the GAM models. Generally, the parameters estimated by the DLM are more certain and follow similar patterns through time as the GAM (@suppfig-tvint & @suppfig-tvslope). There is also more interannual variability in the parameter estimates of the DLM compared to the continuously smoothed pattern of the GAM. 
+
+::: {#suppfig-tvint}
+```{r, echo=FALSE}
+int_panel
+```
+Time-varying intercept of the DLM model representing the relationship between SST anomalies and salmon catch. 
+:::
+
+::: {#suppfig-tvslope}
+```{r, echo=FALSE}
+slope_panel
+```
+Time-varying slope of the DLM model representing the relationship between SST anomalies and salmon catch. 
+:::
