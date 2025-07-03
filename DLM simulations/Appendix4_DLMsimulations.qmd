@@ -54,6 +54,7 @@ Each facet here represents a different standard deviation of the random walk in 
 
 ```{r, message=FALSE, warning=FALSE, echo=FALSE}
 library(ggplot2)
+library(here)
 pars <- readRDS("simulation_pars.rds")
 # filter out the runs that are converging
 subpars <- dplyr::filter(pars, convergence==0)
