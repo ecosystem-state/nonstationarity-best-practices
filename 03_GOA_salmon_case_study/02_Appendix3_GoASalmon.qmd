@@ -46,10 +46,10 @@ First, we standardize and examine the trends in SST and salmon abundace from Lit
 
 ```{r, echo=FALSE}
 # Load salmon timeseries collapsed into DFA trend
-salm.dat <- readRDS(here::here("GOA_salmon_case_study/Data/dfa_trend.rds")) 
+salm.dat <- readRDS(here::here("03_GOA_salmon_case_study/Data/dfa_trend.rds")) 
 
 # Load 3-year running mean winter SST timeseries
-sst.dat <- readRDS(here::here("GOA_salmon_case_study/Data/winterSST_3yr_running_mean.rds")) 
+sst.dat <- readRDS(here::here("03_GOA_salmon_case_study/Data/winterSST_3yr_running_mean.rds")) 
 
 # Bind
 right_join(salm.dat, sst.dat) -> dat
