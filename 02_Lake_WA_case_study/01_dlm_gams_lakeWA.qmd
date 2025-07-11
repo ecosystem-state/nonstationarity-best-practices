@@ -323,6 +323,22 @@ ggplot(df_smooth, aes(date, est, col=knots, fill=knots)) +
 
 ```
 
+### Interpretation:
+
+-   Sewage into Lake WA was a driver of phosphorous, and thought to cause major increases in blue-green algae into the lake
+
+-   This example includes a non-stationary time series of phosphorous into Lake WA, as well as non-stationary driver-response relationship
+
+-   Effects of phosphorous on blue-green algae also appear non-stationary – increasing into the 1970s and becoming stronger (more positive). Why? Biologically this may because the Daphnia population really expanded in the late 1970s (Daphnia sometimes eat blue green algae, but it's a poor food source) – big picture, the lake community changed, and the effect of phosphorous would have to increase to create the same response ("Grazers are known to inhibit cyanobacteria" paragraph in their Discussion)
+
+-   Doesn't account for external effects. Community changed slightly across decades (Francis et al.), and lake has warmed.
+
+-   GAMs and DLMs can give very similar answers. Implicit mgcv implementation involves penalty to prevent overfitting – so is less flexible than DLM (AND has wider SEs)
+
+-   Choice of smooth type has little effect on inference about time varying parameters
+
+-   Adjusting the smoothness DF in mgcv impacts the SEs, and can get the DF much closer to a DLM. If inference is focused on just the mean, this is unnecessary, these give similar answers. But increasing knots increases the SEs
+
 Coding Figure 2 all together
 
 ```{r}
