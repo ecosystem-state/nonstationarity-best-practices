@@ -7,7 +7,7 @@ library(lubridate)
 library(viridis)
 library(paletteer)
 library(ggpubr)
-set.seed(1035)
+#set.seed(1035)
 set.seed(9450)
 col<-paletteer_d("nationalparkcolors::Everglades")
 col2<-col[2:4]
@@ -167,7 +167,7 @@ row3<-ggarrange(fplot,gplot, labels=c("F.", "G."), nrow=1,ncol=2)
 row3a<-annotate_figure(row3, top = text_grob("Stationary Parameter",face = "bold", size = 14))
 
 ggarrange(row1,row2,row3,nrow=3,ncol=1)
-pdf(file = "Figure1_Theorhetical.pdf",   # The directory you want to save the file in
+pdf(file = "Figures/Figure1_Theorhetical.pdf",   # The directory you want to save the file in
         width = 9, # The width of the plot in inches
        height = 9)
 ggarrange(row1a,row2,row3a,nrow=3,ncol=1)

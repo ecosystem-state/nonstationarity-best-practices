@@ -14,10 +14,10 @@ library(data.table)
 ## Salmon Data ##
 
 # Load salmon timeseries collapsed into DFA trend
-salm.dat <- readRDS(here::here("GOA_salmon_case_study/Data/dfa_trend.rds")) 
+salm.dat <- readRDS(here::here("03_GOA_salmon_case_study/Data/dfa_trend.rds")) 
 
 # Load 3-year running mean winter SST timeseries
-sst.dat <- readRDS(here::here("GOA_salmon_case_study/Data/winterSST_3yr_running_mean.rds")) 
+sst.dat <- readRDS(here::here("03_GOA_salmon_case_study/Data/winterSST_3yr_running_mean.rds")) 
 
 # Bind
 right_join(salm.dat, sst.dat) -> dat
@@ -37,7 +37,7 @@ Fit_slm<-ggplot(data=dat2, aes(group=period,col=period, y=salmon_DFA,x=z_sst)) +
 
 ## LTER Data ##
 
-full_data <- readRDS("LTER_NTL_case_study/NTL_LTER_TL_data.rds")
+full_data <- readRDS("01_LTER_NTL_case_study/NTL_LTER_TL_data.rds")
 analysis_data<-full_data%>%
   select(year4, mean_sec,mean_chl, Large,mean_totpuf,period)%>%
   mutate(mean_sec_scale=scale(mean_sec),mean_chl_scale=scale(mean_chl), 
@@ -55,7 +55,7 @@ facet_labeller <- function(variable,value){
 }
 
 ## Lake Washington ##
-dat_lakewa <- readRDS("DLM - GAM comparison/data_for_lakeWA_example.rds")
+dat_lakewa <- readRDS("04_DLM - GAM comparison/data_for_lakeWA_example.rds")
 
 # renaming
 dat_lakewa <- dplyr::rename(dat_lakewa, 
@@ -142,4 +142,4 @@ LTER<-ggplot(data=analysis_long%>%
 LTER
 
 ggarrange(LTER, lakeWA, GoA_TS, labels=c("A.", "B.", "C."), nrow=3)
-ggsave("Figure_1_timeseries.png", height = 8, width = 7)
+ggsave("Figures/Figure_2_timeseries.png", height = 8, width = 7)
