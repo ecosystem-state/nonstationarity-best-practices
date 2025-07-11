@@ -29,7 +29,7 @@ library(knitr)
 library(strucchange)
 library(mgcv)
 
-full_data <- readRDS(here::here("LTER_NTL_case_study/NTL_LTER_TL_data.rds"))
+full_data <- readRDS(here::here("01_LTER_NTL_case_study/NTL_LTER_TL_data.rds"))
 analysis_data<-full_data%>%
   select(year4, mean_sec,mean_chl, Large,mean_totpuf,period)%>%
   mutate(mean_sec_scale=scale(mean_sec),mean_chl_scale=scale(mean_chl), 

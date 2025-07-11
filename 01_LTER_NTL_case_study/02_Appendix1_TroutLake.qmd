@@ -20,7 +20,7 @@ crossref:
 
 ## Overview
 
-Here we show the LM, and GAM  analysis for the Trout Lake dataset. For complete code, see the [full quarto document](https://github.com/ecosystem-state/nonstationarity-best-practices/blob/main/LTER_NTL_case_study/Appendix1_TroutLake.qmd)
+Here we show the LM, and GAM analysis for the Trout Lake dataset. For complete code, see the [full quarto document](https://github.com/ecosystem-state/nonstationarity-best-practices/blob/main/LTER_NTL_case_study/Appendix1_TroutLake.qmd)
 
 Approach for running LTER-NTL Trout Lake data using temporally structured GAMs and linear regression models with time periods defined a-priori.
 
@@ -47,30 +47,30 @@ library(strucchange)
 library(mgcv)
 library(gratia)
 col<-paletteer_d("nationalparkcolors::Everglades")
-full_data <- readRDS(here::here("LTER_NTL_case_study/NTL_LTER_TL_data.rds"))
+full_data <- readRDS(here::here("01_LTER_NTL_case_study/NTL_LTER_TL_data.rds"))
 analysis_data<-full_data%>%
   select(year4, mean_sec,mean_chl, Large,mean_totpuf,period)%>%
   mutate(mean_sec_scale=scale(mean_sec),mean_chl_scale=scale(mean_chl), 
          Large_scale=scale(Large),mean_totpuf_scale=scale(mean_totpuf))
 ```
 
-First we start with looking at three time periods using linear regression models: 
+First we start with looking at three time periods using linear regression models:
 
-1. The historical regime with low water clarity
+1.  The historical regime with low water clarity
 
-2. A clear water regime where the introduction of Lake Trout into the system from stocking in 2006. 
+2.  A clear water regime where the introduction of Lake Trout into the system from stocking in 2006.
 
-3. A novel regime following the introduction of invasive, predatory water flea (*Bythotrephes*) in 2014 which lead to a reversion of water clarity to a less clear state.
+3.  A novel regime following the introduction of invasive, predatory water flea (*Bythotrephes*) in 2014 which lead to a reversion of water clarity to a less clear state.
 
-To examine this we start by looking at a few key food web conditions using intercept only models through time: 
+To examine this we start by looking at a few key food web conditions using intercept only models through time:
 
-1. Water clarity 
+1.  Water clarity
 
-2. Phosphorus - which impacts water clarity and is a common bottom-up process that could impact water clarity and we examine as an alternative hypothesis to the top down processes of Lake Trout and invasive speceis. 
+2.  Phosphorus - which impacts water clarity and is a common bottom-up process that could impact water clarity and we examine as an alternative hypothesis to the top down processes of Lake Trout and invasive speceis.
 
-3. Abundance of large zooplankton *Daphnia* and *Calanoids* 
+3.  Abundance of large zooplankton *Daphnia* and *Calanoids*
 
-4. Chlorophyll
+4.  Chlorophyll
 
 ```{r}
 #| echo: false
@@ -127,8 +127,6 @@ Period.AIC=round(c(AIC(WC_period),AIC(phos_period),AIC(chl_period),AIC(Large_per
 
 ```
 
-
-
 We find that water clarity, chlorophyll, and large zooplankton abundance are all better explained by a model that includes *a priori* defined time periods improves model fit (@supptab-AIC). This indictes that the means for these variables change through time. By examining the time series plot (@suppfig-TS) we can see that large zooplankton and water clarity appear more correlated after 2006, when Lake Trout were stocked in the system. This aligns with our hypothesis that the introduction of top down control in the system has made large zooplankton abundance more tightly coupled with water clarity.
 
 Next we consider whether there are changing relationships between water clarity and these ecosystem dynamics by including a slope parameter and its interaction with time period. We only include an investigation into large zooplankton-water clarity relationship in the main text, but here we also explore chlorophyll-water clarity.
@@ -156,8 +154,7 @@ Interaction<-data.frame(
 
 ```
 
-
-Both Chlorophyll and Large Zooplankton best explain water clarity with a time-varying relationship model, rather than a time-varying abundance model. Next, we examine how these relationships change through time, with a focus on large zooplankton. 
+Both Chlorophyll and Large Zooplankton best explain water clarity with a time-varying relationship model, rather than a time-varying abundance model. Next, we examine how these relationships change through time, with a focus on large zooplankton.
 
 ```{r}
 #| echo: false
@@ -217,6 +214,7 @@ TS_chl<-ggplot(data=analysis_long%>%
 
 
 ```
+
 We can see from these results that there was a weak relationship from 1980 - 2006 between zooplankton abundance and water clarity, that switched to a strong, positive relationship in 2007 - 2014 as large zooplankton were released from top down pressure, and a slightly stronger relationship after 2014 with the introduction of *Bythotrephes* (@suppfig-fit & @supptab-coef).
 
 ## GAM
@@ -277,9 +275,6 @@ prediction2[36,]
 
 ```
 
-
-
-
 ```{r}
 #| echo: FALSE
 #| include: FALSE
@@ -335,7 +330,6 @@ p <- ggplot(results_window, aes(x=last_year, y=as.factor(window), fill= Intercep
 #p
 ```
 
-
 ```{r}
 #| echo: FALSE
 #| output: FALSE
@@ -380,8 +374,6 @@ results_window<-sf_fun_gam(2023:1992,window)
 
 
 ```
-
-
 
 ```{r}
 #| echo: FALSE
@@ -445,7 +437,6 @@ panel_d<-rw_intercept <-
 panel_d
 
 ```
-
 
 ```{r}
 #| echo: FALSE
@@ -557,66 +548,66 @@ panel_f<-ggplot(data=pred,aes(y=prediction.fit, x=year,group=Model, col=Model)) 
 ## Figures & Tables
 
 ::: {#suppfig-TS}
-
 ```{r, echo=FALSE}
 ts
 ```
+
 Standardized time series of ecological conditions observed in Trout Lake.
 :::
 
 ::: {#suppfig-fit}
-
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
 Fit_zoop
 ```
+
 Relationship between large zooplankton abundance and water clarity for three time periods defined *a priori*.
 :::
 
 ::: {#suppfig-fitgam}
-
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
 gamfit
 ```
+
 Predicted values of water clarity (black line) compared to observed values (red points) using a time-varying relationship with zooplankton abundance.
 :::
 
 ::: {#suppfig-slope}
-
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
 panel_a
 ```
+
 Estimates of the slope of the relationship based on a time-varying LM (blue) and a time-varying GAM (red)
 :::
 
 ::: {#suppfig-int}
-
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
 panel_b
 ```
+
 Estimates of the intercept of the relationship based on a time-varying LM (blue) and a time-varying GAM (red)
 :::
 
 ::: {#supptab-AIC}
-
 ```{r, echo=FALSE}
 #| warning: false
 knitr::kable(head(AIC_table))
 ```
+
 AIC values comparing linear models with *a priori* defined time periods (time-varying model) and no time period (time-invariant model)
 :::
 
 ::: {#supptab-INT}
-
 ```{r, echo=FALSE}
 knitr::kable(head(Interaction))
 ```
+
 AIC values comparing linear models comparing time-varying abundance models versus time-varying relationship models
 :::
 
 ::: {#supptab-coef}
-
 ```{r, echo=FALSE, warning=FALSE}
 knitr::kable(head(zoopresults))
 ```
+
 Model coefficients for the time-varying relationship model between large zooplankton and water clarity
 :::

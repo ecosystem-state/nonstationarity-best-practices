@@ -23,7 +23,7 @@ ci_func <- function(data,column) {
 }
 
 ###### Secchi data #####
-secchi <- read.csv("LTER_NTL_case_study/NTL-LTER-TroutLake/NTL_LTER_TroutLake_Secchi.csv")
+secchi <- read.csv("01_LTER_NTL_case_study/NTL-LTER-TroutLake/NTL_LTER_TroutLake_Secchi.csv")
 secchi_TR<-secchi%>%
   filter(lakeid=="TR")%>%
   select(year4, daynum, sampledate, sta, secview, secnview)%>% 
@@ -75,7 +75,7 @@ secchi.plot <- ggplot(data =secchi_TR_summary, aes(x = year4, y = mean_sec)) +
 secchi.plot
 
 ##### Dissolved Reactive Silica #####
-chemistry <- read.csv("LTER_NTL_case_study/NTL-LTER-TroutLake/NTL_LTER_TroutLake_Chemistry.csv")
+chemistry <- read.csv("01_LTER_NTL_case_study/NTL-LTER-TroutLake/NTL_LTER_TroutLake_Chemistry.csv")
 
 head(chemistry)
 
@@ -116,7 +116,7 @@ drsf.plot
 
 
 ##### Chlorophyll #####
-chl <- read.csv("LTER_NTL_case_study/NTL-LTER-TroutLake/NTL_LTER_TroutLake_ChlA.csv")
+chl <- read.csv("01_LTER_NTL_case_study/NTL-LTER-TroutLake/NTL_LTER_TroutLake_ChlA.csv")
 chl_TR<-chl%>%
   filter(lakeid=="TR", depth==0.0)%>%
   select(year4, daynum, sampledate, depth, rep, sta,chlor)%>% 
@@ -151,7 +151,7 @@ chl.plot
 
 
 ##### Predatory Zooplankton #####
-pred <- read.csv("LTER_NTL_case_study/NTL-LTER-TroutLake/NTL_LTER_PredZoop.csv")
+pred <- read.csv("01_LTER_NTL_case_study/NTL-LTER-TroutLake/NTL_LTER_PredZoop.csv")
 colnames(pred)
 unique(pred$taxon)
 pred_TR<-pred%>%
@@ -179,7 +179,7 @@ pred.plot<- ggplot(data =pred_TR_summary, aes(x = year4, y = mean_pred, group=Gr
 
 
 ##### Predatory Zooplankton #####
-pred <- read.csv("LTER_NTL_case_study/NTL-LTER-TroutLake/NTL_LTER_PredZoop.csv")
+pred <- read.csv("01_LTER_NTL_case_study/NTL-LTER-TroutLake/NTL_LTER_PredZoop.csv")
 colnames(pred)
 unique(pred$taxon)
 pred_TR<-pred%>%
@@ -206,8 +206,8 @@ pred.plot<- ggplot(data =pred_TR_summary, aes(x = year4, y = mean_pred, group=Gr
  # geom_errorbar(aes(ymin=ci_chl_lwr,ymax=ci_chl_upr))
 
 ##### Zooplankton #####
-zoop <- read.csv("LTER_NTL_case_study/NTL-LTER-TroutLake/NTL_LTER_TroutLake_Zooplankton.csv")
-zoopsCODE <- read.csv("LTER_NTL_case_study/NTL-LTER-TroutLake/zoopsCODE.csv")
+zoop <- read.csv("01_LTER_NTL_case_study/NTL-LTER-TroutLake/NTL_LTER_TroutLake_Zooplankton.csv")
+zoopsCODE <- read.csv("01_LTER_NTL_case_study/NTL-LTER-TroutLake/zoopsCODE.csv")
 
 zoop_TR<-zoop%>%
   filter(lakeid=="TR")%>%
@@ -235,9 +235,9 @@ zoop.plot<- ggplot(data =zoop_TR_summary, aes(x = year4, y = mean_zoop, group=Gr
 
 
 ##### Cisco and Lake Trout #####
-acoustic <- read.csv("LTER_NTL_case_study/NTL-LTER-TroutLake/NTL_LTER_TroutLake_FishDensity.csv")
-CPUE <- read.csv("LTER_NTL_case_study/NTL-LTER-TroutLake/NTL_LTER_TroutLake_CPUE.csv")
-Lengths <- read.csv("LTER_NTL_case_study/NTL-LTER-TroutLake/NTL_LTER_Lengths.csv")
+acoustic <- read.csv("01_LTER_NTL_case_study/NTL-LTER-TroutLake/NTL_LTER_TroutLake_FishDensity.csv")
+CPUE <- read.csv("01_LTER_NTL_case_study/NTL-LTER-TroutLake/NTL_LTER_TroutLake_CPUE.csv")
+Lengths <- read.csv("01_LTER_NTL_case_study/NTL-LTER-TroutLake/NTL_LTER_Lengths.csv")
 
 acoustic_TR<-acoustic%>%
   filter(lakeid=="TR"&species=="CISCO"|species=="LAKETROUT")%>%
@@ -330,7 +330,7 @@ full_data[is.na(full_data)] <- 0
 
 saveRDS(full_data, file = "NTL_LTER_TL_data.rds")
 ##### writing full plots and datasets ####
-pdf(file = "LTER_NTL_case_study/NTL_LTER_TSplots.pdf",  
+pdf(file = "01_LTER_NTL_case_study/NTL_LTER_TSplots.pdf",  
     width = 6,
     height = 8) 
 
