@@ -1,3 +1,3 @@
-# 04_DLM - GAM comparison
+# 05_WAoyster_case_study
 
-We included an analysis that compared DLM and GAM output across case studies (GoA salmon and Lake Washington). This folder contains the data that was combined and the resulting output for the combined analysis. For more context on these case studies, see the associated case study folders.
+We considered a fourth case study that was not ultimately included in this analysis as we determined the interpretation was similar to the GoA salmon case study, but that case study offered a clearer illustration. Here we provide the scripts for processing and exploring the raw data "01_oyster_dfa.R" with the raw data contained in the data folder, and the exploratory linear models and GAMs that were considered which are in "02_wa.oystercondition.qmd"
