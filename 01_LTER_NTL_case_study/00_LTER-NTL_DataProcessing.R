@@ -330,7 +330,7 @@ full_data[is.na(full_data)] <- 0
 
 saveRDS(full_data, file = "NTL_LTER_TL_data.rds")
 ##### writing full plots and datasets ####
-pdf(file = "01_LTER_NTL_case_study/NTL_LTER_TSplots.pdf",  
+pdf(file = "Figures/NTL_LTER_TSplots.pdf",  
     width = 6,
     height = 8) 
 

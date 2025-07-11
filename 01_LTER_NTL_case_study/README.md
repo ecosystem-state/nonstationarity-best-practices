@@ -1,3 +1,3 @@
-# 00_DLM simulations
+# 01_LTER_NTL_case_study
 
-This folder contains data and code that supports Appendix 4: DLM Simulations. The file "simulations.R" contains code to simulate data which is exported as "simulation_pars.rds". The quarto file "Appendix4_DLMsimulations.qmd" uses "simulation_pars.rds" to produce "Appendix4_DLMsimulations.pdf"
+This folder contains data and code that supports the Trout Lake case study in "Time-varying relationships in ecological modeling". "00_LTER-NTL_DataProcessing.R" processes the data that was accessed at [North Temperate Lakes Long-Term Ecological Research](https://lter.limnology.wisc.edu/core-datasets/) and contained in the "NTL-LTER-TroutLake" folder which were accessed on July, 30 2024. This script produces the six "NTL_LTER_TR_.rds" objects which are used by the two quarto files "01_LTER_NTL.qmd" and "02_Appendix1_TroutLake.qmd". Figure output can be found in the Figures folder.
