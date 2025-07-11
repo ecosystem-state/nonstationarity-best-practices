@@ -105,6 +105,7 @@ covtrend<-ggplot(dplyr::filter(subpars, coef_sd==0.1, n_years == 100), aes(y = r
 ```{r, echo=FALSE, warning=FALSE}
 tslength
 ```
+
 Correlation between the model estimated slope and the true slope as a function of time series length. Each panel represents a different ratio in variability between the slop and intercept.
 :::
 
@@ -112,6 +113,7 @@ Correlation between the model estimated slope and the true slope as a function o
 ```{r, echo=FALSE, warning=FALSE}
 auto
 ```
+
 Correlation between the model estimated slope and the true slope as a function of autocorrelation
 :::
 
@@ -119,5 +121,6 @@ Correlation between the model estimated slope and the true slope as a function o
 ```{r, echo=FALSE, warning=FALSE}
 covtrend
 ```
+
 Correlation between the model estimated slope and the true slope as a function of the covariate trend
 :::
