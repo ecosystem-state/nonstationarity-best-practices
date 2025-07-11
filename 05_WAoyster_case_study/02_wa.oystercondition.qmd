@@ -1,6 +1,6 @@
 ---
 title: "WA Oyster Condition Case Study"
-format: html
+format: pdf
 editor: visual
 ---
 
@@ -27,7 +27,7 @@ library(knitr)
 library(strucchange)
 library(mgcv)
 
-full_data <- read.csv("/Users/mary.hunsicker/Documents/nonstationarity-best-practices/WAoyster_case_study/data/all.oyster.data.csv")
+full_data <- read.csv(here::here("05_WAoyster_case_study/all.oyster.data.csv"))
 
 analysis_data<-full_data%>%
   select(year, spr.oys.trend,spr.pdo,spr.upw, period)%>%

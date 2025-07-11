@@ -5,7 +5,7 @@ library(ggplot2)
 library(viridis)
 
 
-dat=read.csv("data/wa_oyster_condition.csv")
+dat=read.csv("05_WAoyster_case_study/data/wa_oyster_condition.csv")
 names(dat)=tolower(names(dat))
 dat.test=arrange(dat,year)
 dfa.dat=dat[which(dat$year>=1955&dat$year<=2023),] #same length as covariate data
@@ -46,7 +46,7 @@ ggplot(ann.dat, aes(year,mean.val)) +
   xlim(c(1955,2023)) +
   theme(strip.text.x = element_text(size = 7))
 #ggsave("sprsum_rawdata.pdf",width = 11, height = 7)
-ggsave("fallwin_rawdata.pdf",width = 11, height = 7)
+#ggsave("fallwin_rawdata.pdf",width = 11, height = 7)
 
 Y <- reshape2::dcast(ann.dat, code ~ year)
 names = Y$code
@@ -98,13 +98,13 @@ model.tbl = model.tbl[,-6]
 print(model.tbl)
 
 #write.csv(model.tbl,'sprsumDFA_AIC.csv')
-write.csv(model.tbl,'fallwinDFA_AIC.csv')
+#write.csv(model.tbl,'fallwinDFA_AIC.csv')
 
 model.list = list(A="zero", m=1, R= "diagonal and unequal")
 dfa.mod = MARSS(Y, model=model.list, z.score=TRUE, form="dfa")
 
 #saveRDS(dfa.mod,"sprsum_trend.rds")
-saveRDS(dfa.mod,"fallwin_trend.rds")
+#saveRDS(dfa.mod,"fallwin_trend.rds")
 
 #### To plot 1 trend model
 # get CI and plot loadings...
@@ -119,7 +119,7 @@ loadings <- data.frame(names = names,
 #loadings$names <- reorder(loadings$names, loadings$order)
 
 #write.csv(loadings,'sprsum_loadings.csv')
-write.csv(loadings,'fallwin_loadings.csv')
+#write.csv(loadings,'fallwin_loadings.csv')
 
 #quartz()
 loadings.plot=ggplot(loadings, aes(names, loading)) +
@@ -130,7 +130,7 @@ loadings.plot=ggplot(loadings, aes(names, loading)) +
   ylab("Loading")
 
 #ggsave("sprsum_loadings.pdf",width = 8, height=6)
-ggsave("fallwin_loadings.pdf",width = 8, height=6)
+#ggsave("fallwin_loadings.pdf",width = 8, height=6)
 
 
 trend <- data.frame(year = 1955:2023,
@@ -139,7 +139,7 @@ trend <- data.frame(year = 1955:2023,
                     ymax = as.vector(dfa.mod$states+1.96*dfa.mod$states.se))
 
 #write.csv(trend,'sprsum_model.trend.csv')
-write.csv(trend,'fallwin_model.trend.csv')
+#write.csv(trend,'fallwin_model.trend.csv')
 
 #quartz()
 trend.plot <- ggplot(trend, aes(year, trend)) +
@@ -151,12 +151,12 @@ trend.plot <- ggplot(trend, aes(year, trend)) +
   ylab("Trend") +
   scale_x_continuous(breaks = seq(1955, 2023, 5))
 #ggsave("sprsum_trend.pdf",width = 8, height=6)
-ggsave("fallwin_trend.pdf",width = 8, height=6)
+#ggsave("fallwin_trend.pdf",width = 8, height=6)
 
 
 
 # load PDO data and average May-Sept
-dat<-read.csv("pdo.csv") 
+dat<-read.csv("05_WAoyster_case_study/data/raw_pdo.csv") 
 dat<-dat[dat$year>=1955&dat$year<=2023,]
 pdo.dat=dat[dat$month %in% c("5","6","7","8","9"),]
 
@@ -164,10 +164,10 @@ ann.pdo=pdo.dat %>%
   group_by(year) %>%
   summarize(mean.val= mean(pdo, na.rm=T)
   )
-write.csv(ann.pdo,'sprsum.pdo.csv')
+#write.csv(ann.pdo,'sprsum.pdo.csv')
 
 # load PDO data and average Oct to April
-dat<-read.csv("pdo.csv") 
+dat<-read.csv("05_WAoyster_case_study/data/raw_pdo.csv") 
 dat<-dat[dat$year>=1955&dat$year<=2023,]
 pdo.dat=dat[dat$month %in% c("10","11","12","1","2","3","4"),]
 
@@ -176,11 +176,11 @@ ann.pdo=pdo.dat %>%
   group_by(win.yr) %>%
   summarize(mean.val= mean(pdo, na.rm=T)
   )
-write.csv(ann.pdo,'win.pdo.csv')
+#write.csv(ann.pdo,'win.pdo.csv')
 
 
 # load upwelling data data and average May-Sept
-dat<-read.csv("upw.csv") 
+dat<-read.csv("05_WAoyster_case_study/data/raw_upw.csv") 
 dat=dat[dat$lat %in% c("45N"),]   
 dat=dat[-c(1:2)]
 melt.dat=melt(dat, id.vars = c("year"))
@@ -193,10 +193,10 @@ ann.upw=upw.dat %>%
   group_by(year) %>%
   summarize(mean.val= mean(value, na.rm=T)
   )
-write.csv(ann.upw,'sprsum.upw.csv')
+#write.csv(ann.upw,'sprsum.upw.csv')
 
 # load upwelling data and average Oct to April
-dat<-read.csv("upw.csv") 
+dat<-read.csv("05_WAoyster_case_study/data/raw_upw.csv") 
 dat=dat[dat$lat %in% c("45N"),]   
 dat=dat[-c(1:2)]
 melt.dat=melt(dat, id.vars = c("year"))
@@ -209,5 +209,5 @@ ann.upw=upw.dat %>%
   group_by(win.yr) %>%
   summarize(mean.val= mean(value, na.rm=T)
   )
-write.csv(ann.upw,'win.upw.csv')
+#write.csv(ann.upw,'win.upw.csv')
 
