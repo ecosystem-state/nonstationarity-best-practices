@@ -1,4 +1,6 @@
 library(MARSS)
+install.packages('marssTMB', repos = c('https://atsa-es.r-universe.dev', 'https://cloud.r-project.org'))
+
 library(marssTMB)
 
 set.seed(123)
@@ -12,6 +14,8 @@ pars$q_alpha <- NA
 pars$q_beta <- NA
 pars$convergence <- NA
 pars$rho_cov <- NA
+# second dataframe for AR1 models
+pars_ar1 <- pars
 
 for(i in 1:nrow(pars)) {
   
@@ -34,7 +38,7 @@ x <- c(arima.sim(n = TT, list(ar = pars$rho[i]), sd = 1))
 dat <- x0 + tv_coef * x + seq(0,TT-1)*pars$covar_trend[i] + rnorm(TT, 0, 0.01) 
 
 ## number of regr params (slope + intercept)
-m <- dim(x_z)[1] + 1
+m <- 2#dim(x_z)[1] + 1
 
 ## for process eqn
 B <- diag(m)  ## 2x2; Identity
@@ -64,7 +68,22 @@ pars$q_beta[i] <- sqrt(dlm_1$par$Q[2,1])
 pars$convergence[i] <- dlm_1$convergence
 
 pars$rho_cov[i] <- cor(dlm_1$states[2,], c(tv_coef))
+
+# fit AR1 model
+B = "diagonal and unequal"
+mod_list <- list(B = B, U = U, Q = Q, Z = Z, A = A, R = R)
+dlm_ar1 <- MARSS(dat, inits = inits_list, model = mod_list, method="TMB")
+
+#tidy_pars <- tidy(dlm_1)
+pars_ar1$R[i] <- dlm_ar1$par$R
+pars_ar1$q_alpha[i] <- sqrt(dlm_ar1$par$Q[1,1])
+pars_ar1$q_beta[i] <- sqrt(dlm_ar1$par$Q[2,1])
+pars_ar1$convergence[i] <- dlm_ar1$convergence
+pars_ar1$rho_cov[i] <- cor(dlm_1$states[2,], c(tv_coef))
+
+
 print(i)
 }
 
-saveRDS(pars, "simulation_pars.rds")
+saveRDS(pars, "00_DLM simulations/simulation_pars.rds")
+saveRDS(pars_ar1, "00_DLM simulations/simulation_pars_ar1.rds")
