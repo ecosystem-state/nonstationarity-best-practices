@@ -46,6 +46,8 @@ library(knitr)
 library(strucchange)
 library(mgcv)
 library(gratia)
+library(tidyr)
+library(data.table)
 col<-paletteer_d("nationalparkcolors::Everglades")
 full_data <- readRDS(here::here("01_LTER_NTL_case_study/NTL_LTER_TL_data.rds"))
 analysis_data<-full_data%>%
@@ -154,7 +156,36 @@ Interaction<-data.frame(
 
 ```
 
-Both Chlorophyll and Large Zooplankton best explain water clarity with a time-varying relationship model, rather than a time-varying abundance model. Next, we examine how these relationships change through time, with a focus on large zooplankton.
+Both Chlorophyll and Large Zooplankton best explain water clarity with a time-varying relationship model, rather than a time-varying abundance model.
+
+We can examine the residuals from these two models. The trend in the residuals from the Chlorophyll model appears a little stronger in magnitude.
+
+```{r echo = FALSE}
+resid_df <- data.frame(Model = "Large Zooplankton", 
+                       resid = resid(zoop_slope_int),
+                       year = full_data$year)
+resid_df2 <- data.frame(Model = "Chlorophyll", 
+                       resid = resid(chl_slope_int),
+                       year = full_data$year)
+resid <- rbind(resid_df, resid_df2)
+ggplot(resid, aes(year, resid)) + 
+  geom_point() + 
+  geom_smooth() + 
+  facet_wrap(~Model) + 
+  theme_bw() + xlab("Year") + ylab("Residuals")
+```
+
+Another residual check is with qq plots – both models look mostly ok
+
+```{r echo = FALSE}
+ggplot(resid, aes(sample = resid)) + stat_qq() + stat_qq_line() + labs(
+    x = "Theoretical Quantiles",
+    y = "Sample Quantiles"
+  ) + theme_bw() + facet_wrap(~ Model)
+
+```
+
+Next, we examine how these relationships change through time, with a focus on large zooplankton.
 
 ```{r}
 #| echo: false
@@ -272,6 +303,26 @@ summary(bp.y)
 prediction2[26,]
 prediction2[36,]
 
+
+```
+
+We can do similar residual diagnostics with the GAM model used. There doesn't appear to be a temporal trend or issue with the QQ plots.
+
+```{r echo = FALSE}
+resid_df <- data.frame(resid = resid(gam1),
+                       year = full_data$year4)
+ggplot(resid_df, aes(year, resid)) + 
+  geom_point() + 
+  geom_smooth() + 
+  theme_bw() + 
+  xlab("Year") + ylab("Residuals")
+```
+
+```{r echo = FALSE}
+ggplot(resid_df, aes(sample = resid)) + stat_qq() + stat_qq_line() + labs(
+    x = "Theoretical Quantiles",
+    y = "Sample Quantiles"
+  ) + theme_bw()
 
 ```
 
