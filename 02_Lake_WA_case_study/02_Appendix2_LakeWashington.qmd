@@ -200,7 +200,8 @@ dat$n_date <- as.numeric(as.factor(dat$date))
 gam_cr1 <- gam(y_adj ~ s(lagged_zp, bs = "cr"), data = dat) #1
 gam_cr2 <- gam(y_adj ~ s(lagged_zp, by = n_date, bs = "cr"), data = dat) #2
 gam_cr3 <- gam(y_adj ~ s(n_date, by = lagged_zp, bs = "cr"), data = dat) #3
-
+gam_cr4 <- gam(y_adj ~ s(n_date), data = dat) #4
+gam_cr5 <- gam(y_adj ~ te(lagged_zp, n_date), data = dat) #5
 ```
 
 ```{r, include=FALSE}
@@ -219,76 +220,161 @@ xlab("Phosphorous") +
 ylab("Effect")
 #ggsave(p1, filename = "Figure_S1_nonlinear_smooth.png", height = 5, width=7)
 # make second plot showing fits from all 3 models
-pred_1 <- dat
-pred_1$pred <- predict(gam_cr1, se.fit=TRUE)$fit
-pred_1$se <- predict(gam_cr1, se.fit=TRUE)$se.fit
-pred_1$smooth <- "s(phos)"
-pred_2 <- dat
-pred_2$pred <- predict(gam_cr2, se.fit=TRUE)$fit
-pred_2$se <- predict(gam_cr2, se.fit=TRUE)$se.fit
-pred_2$smooth <- "s(phos,by=date)"
-pred_3 <- dat
-pred_3$pred <- predict(gam_cr3, se.fit=TRUE)$fit
-pred_3$se <- predict(gam_cr3, se.fit=TRUE)$se.fit
-pred_3$smooth <- "s(date,by=phos)"
 
-d_all <- rbind(pred_1, pred_2, pred_3)
-p2 <- ggplot(d_all, aes(date, y_adj, col = smooth)) + 
-  geom_point(col="black") + 
+# Predict for all models and store model label (corresponding to main fig)
+pred_1 <- dat
+pred_1$pred <- predict(gam_cr1, se.fit = TRUE)$fit
+pred_1$se <- predict(gam_cr1, se.fit = TRUE)$se.fit
+pred_1$smooth <- "Panel C: s(Phos)"
+
+pred_2 <- dat
+pred_2$pred <- predict(gam_cr2, se.fit = TRUE)$fit
+pred_2$se <- predict(gam_cr2, se.fit = TRUE)$se.fit
+pred_2$smooth <- "Panel E: s(Phos, by=date)"
+
+pred_3 <- dat
+pred_3$pred <- predict(gam_cr3, se.fit = TRUE)$fit
+pred_3$se <- predict(gam_cr3, se.fit = TRUE)$se.fit
+pred_3$smooth <- "Panel D: s(date, by=Phos)"
+
+pred_4 <- dat
+pred_4$pred <- predict(gam_cr4, se.fit = TRUE)$fit
+pred_4$se <- predict(gam_cr4, se.fit = TRUE)$se.fit
+pred_4$smooth <- "Panel B: s(date)"
+
+pred_5 <- dat
+pred_5$pred <- predict(gam_cr5, se.fit = TRUE)$fit
+pred_5$se <- predict(gam_cr5, se.fit = TRUE)$se.fit
+pred_5$smooth <- "Panel F: te(Phos, date)"
+
+# Combine all predictions
+d_all <- rbind(pred_4, pred_1, pred_3, pred_2, pred_5)
+
+# Create the plot (Panel A)
+pA <- ggplot(d_all, aes(date, y_adj, col = smooth)) + 
+  geom_point(col = "black", alpha = 0.4) + 
+  geom_line(aes(y = pred), linewidth = 1.5, alpha = 0.7) + 
   theme_bw() + 
-  geom_line(aes(date, pred), size=2,alpha=0.5) + 
-  xlab("") + ylab("Detrended cyanobacteria") + 
-  scale_color_viridis_d(option="magma",begin=0.2, end=0.8)
-ggsave(p2, filename = "Figure_S2_nonlinear_v_nonstationary.png", height = 5, width=7)
+  xlab("") + 
+  ylab("Detrended cyanobacteria") + 
+  scale_color_viridis_d(
+    option = "mako",
+    begin = 0.1,
+    end = 0.9,
+    name = "Model"
+  ) +
+  labs(title = "Observed vs. predicted fits from all GAMs")
 
 ```
 
 ::: {#suppfig-gamFit}
 ```{r, echo=FALSE}
-p2
+pA
 ```
 
 Fit of the GAM models (lines) to observed bluegreen algae (cyanobacteria) abundance (black points). Colors denote different specifications of the smoother functions.
 :::
 
 ```{r, include= FALSE}
-# extract the smooth estimates with SEs to compare to DLM
-plot_cr2 <- plot(gam_cr2, seWithMean = TRUE, n = nrow(dat))
-plot_cr3 <- plot(gam_cr3, seWithMean = TRUE, n = nrow(dat))
+# Predict smooth over date
+model_colors <- viridisLite::viridis(n = 5, option = "mako")
+grid_B <- data.frame(n_date = seq(min(dat$n_date), max(dat$n_date), length.out = 100))
+pred_B <- predict(gam_cr4, newdata = grid_B, se.fit = TRUE)
+grid_B$fit <- pred_B$fit
+grid_B$se <- pred_B$se
 
-df_cr2 <- data.frame(lagged_zp = dat$lagged_zp,
-est = plot_cr2[[1]]$fit,
-se = plot_cr2[[1]]$se)
+pB <- ggplot(grid_B, aes(n_date, fit)) +
+  geom_line(color = model_colors[1], linewidth = 1.2) +
+  geom_ribbon(aes(ymin = fit - 2*se, ymax = fit + 2*se), alpha = 0.3, fill = model_colors[1]) +
+  theme_bw() +
+  labs(
+    title = "Smooth of Date: s(date)",
+    x = "Date", y = "Effect"
+  )
 
-p3 <- ggplot(df_cr2, aes(lagged_zp, est)) +
-geom_ribbon(aes(ymin = est - 2*se, ymax = est + 2*se), alpha = 0.4, col = NA, fill=viridis(1)) +
-theme_bw() +
-geom_line(col = viridis(1)) + 
-xlab("Phosphorous") +
-ylab("Date effect")
+grid_C <- data.frame(lagged_zp = seq(min(dat$lagged_zp), max(dat$lagged_zp), length.out = 100))
+pred_C <- predict(gam_cr1, newdata = grid_C, se.fit = TRUE)
+grid_C$fit <- pred_C$fit
+grid_C$se <- pred_C$se
 
-df_cr3 <- data.frame(date = dat$date,
-est = plot_cr3[[1]]$fit,
-se = plot_cr3[[1]]$se)
+pC <- ggplot(grid_C, aes(lagged_zp, fit)) +
+  geom_line(color = model_colors[2], linewidth = 1.2) +
+  geom_ribbon(aes(ymin = fit - 2*se, ymax = fit + 2*se), alpha = 0.3, fill = model_colors[2]) +
+  theme_bw() +
+  labs(
+    title = "Smooth of Phosphorus: s(Phos)",
+    x = "Phosphorus", y = "Effect"
+  )
 
-p4 <- ggplot(df_cr3, aes(date, est)) +
-geom_ribbon(aes(ymin = est - 2*se, ymax = est + 2*se), alpha = 0.4, col = NA, fill=viridis(1)) +
-theme_bw() +
-geom_line(col = viridis(1)) + 
-xlab("Date") +
-ylab("Phosphorous effect")
-# 
-# combo <- gridExtra::grid.arrange(p1,p2,p3,p4,ncol=1)
-# ggsave(combo, filename = "Fig_1.png", height=7, width=7)\
+# This panel is for s(n_date, by = lagged_zp)
+# We are going to use 3 reference values of phosphorous at the quantiles below
+zp_vals <- quantile(dat$lagged_zp, probs = c(0.1, 0.5, 0.9))
+grid_D <- expand.grid(
+  lagged_zp = zp_vals,
+  n_date = seq(min(dat$n_date), max(dat$n_date), length.out = 100)
+)
+pred_D <- predict(gam_cr3, newdata = grid_D, se.fit = TRUE)
+grid_D$fit <- pred_D$fit
+grid_D$se <- pred_D$se
+grid_D$group <- factor(grid_D$lagged_zp, labels = c("Low Phos", "Med Phos", "High Phos"))
 
-library(patchwork)
+pD <- ggplot(grid_D, aes(n_date, fit, color = group, fill = group)) +
+  geom_line(linewidth = 1.2) +
+  geom_ribbon(aes(ymin = fit - 2*se, ymax = fit + 2*se), alpha = 0.2, color = NA) +
+  scale_color_viridis_d(name = "Phosphorus", begin=0.2, end = 0.8) +
+  scale_fill_viridis_d(name = "Phosphorus", begin=0.2, end = 0.8) +
+  theme_bw() +
+  labs(
+    title = "Time effect by Phosphorus: s(date, by = Phos)",
+    x = "Date", y = "Effect"
+  )
 
-# Combine plots with labels using patchwork
-combo <- (p1 + p2 + p3 + p4) +
-  plot_layout(ncol = 1) +
-  plot_annotation(tag_levels = "a") &
-  theme(plot.tag.position = c(0.1, 0.95))
-ggsave(combo, filename = "Fig_1.png", height=7, width=7)
+# This panel is for s(lagged_zp, by = n_date)
+grid_E <- expand.grid(
+  lagged_zp = seq(min(dat$lagged_zp), max(dat$lagged_zp), length.out = 200),
+  n_date = c(25, 75, 125)
+)
+
+pred_E <- predict(gam_cr2, newdata = grid_E, se.fit = TRUE)
+grid_E$fit <- pred_E$fit
+grid_E$se <- pred_E$se
+grid_E$date_label <- factor(paste0("Day ", grid_E$n_date), levels = c("Day 25", "Day 75", "Day 125"))
+
+pE <- ggplot(grid_E, aes(lagged_zp, fit, color = date_label, fill = date_label)) +
+  geom_line(linewidth = 1.2) +
+  geom_ribbon(aes(ymin = fit - 2 * se, ymax = fit + 2 * se), alpha = 0.2, color = NA) +
+  scale_color_viridis_d(name = "Date", begin=0.2, end = 0.8) +
+  scale_fill_viridis_d(name = "Date", begin=0.2, end = 0.8) +
+  theme_bw() +
+  labs(
+    title = "Phosphorus effect by date: s(Phos, by = date)",
+    x = "Phosphorus", y = "Effect"
+  )
+
+grid_F <- expand.grid(
+  lagged_zp = seq(min(dat$lagged_zp), max(dat$lagged_zp), length.out = 100),
+  n_date = seq(min(dat$n_date), max(dat$n_date), length.out = 100)
+)
+pred_F <- predict(gam_cr5, newdata = grid_F, se.fit = TRUE)
+grid_F$fit <- pred_F$fit
+
+pF <- ggplot(grid_F, aes(n_date, lagged_zp, fill = fit)) +
+  geom_raster(interpolate = TRUE) +
+  scale_fill_viridis_c(option = "C") +
+  theme_bw() +
+  labs(
+    title = "Tensor interaction: te(Phos, date)",
+    x = "Date", y = "Phosphorus",
+    fill = "Effect"
+  )
+
+final_plot <- (pA + pB + pC + pD + pE + pF) +
+  plot_layout(ncol = 2, nrow = 3) +
+  plot_annotation(tag_levels = "A") &
+  theme(plot.tag.position = c(0.01, 0.98))
+
+# Save the combined figure
+ggsave(plot=final_plot, filename="gam_comparison_grid.png", height = 8, width = 10)
 ```
 
 There are a few more analysis approaches for running GAMs including the choice of smoother function (@suppfig-gamFit & @suppfig-gamSmooth) and the number of knots, or the "wiggliness" (@suppfig-gamknots) of the smoothed relationship. We can plot these different results and include the results of the DLM for comparison, note that 'cr' and 'tp' are so similar they are difficult to discern from the plot. We can do a similar comparison for the choice of k. Here we compare a four different numbers of knots (@suppfig-gamknots).
