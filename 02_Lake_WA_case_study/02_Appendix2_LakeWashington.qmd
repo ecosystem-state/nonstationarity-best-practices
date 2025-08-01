@@ -189,6 +189,19 @@ dlmFit
 Fit of the DLM model with time-varying slope (black line) to observed bluegreen algae abundance (red points).
 :::
 
+And we can examine the residuals for a temporal trend, and see that because the DLM is flexible, there's not much evidence of a trend
+
+```{r}
+resid_dlm <- predict(dlm_1)$pred
+resid_dlm$resid <- resid_dlm$y - resid_dlm$estimate
+resid_dlm$date <- dat$date
+
+ggplot(resid_dlm, aes(date, resid)) + 
+  geom_point() + 
+  geom_smooth() + 
+  theme_bw() + xlab("Date") + ylab("Residuals")
+```
+
 ## GAMs
 
 We can fit a GAM model 3 ways, 1) so that the smoother is a function of phosphorus which represents a nonlinear relationship between total phosphorus and bluegreen algae that is not temporally structured thus the relationship is stationary and fixed through time. This is how GAMs are typically structured for ecological analyses. 2) A temporally structured model so that the smooth function of phosphorus varies by time, and 3) a smooth on date as a driver of cyanobacteria where the smooth through time varies by phosphorus level. We show the model predicted cyanobacteria trend through time using these three modeling approaches. While they are quite similar, the predictions diverge sustantially at the end of the time series.
@@ -375,6 +388,32 @@ final_plot <- (pA + pB + pC + pD + pE + pF) +
 
 # Save the combined figure
 ggsave(plot=final_plot, filename="gam_comparison_grid.png", height = 8, width = 10)
+```
+
+It is important to also examine the residuals from these models. For example, we can look at the residuals for the GAMs fit to the Lake Washington data. In looking across models, those that do not include time-varying parameters show evidence of a persistent trend in the residuals that is not accounted for by the model.
+
+```{r}
+
+resid_df_1 <- data.frame(date = dat$date, resid = resid(gam_cr1),
+                         Model = "s(Phos)")
+resid_df_2 <- data.frame(date = dat$date, resid = resid(gam_cr2),
+                         Model = "s(Phos, by = date)")
+resid_df_3 <- data.frame(date = dat$date, resid = resid(gam_cr3),
+                         Model = "s(date, by=Phos)")
+resid_df_4 <- data.frame(date = dat$date, resid = resid(gam_cr4),
+                         Model = "s(date)")
+resid_df_5 <- data.frame(date = dat$date, resid = resid(gam_cr5),
+                         Model = "te(Phos, date")
+resid <- rbind(resid_df_1, resid_df_2, resid_df_3, resid_df_4, resid_df_5)
+ggplot(resid, aes(date, resid, group = Model)) + 
+  geom_point() + 
+  geom_smooth() + theme_bw() + 
+  facet_wrap(~ Model) + xlab("Date") + 
+  ylab("Residuals")
+
+```
+
+```{}
 ```
 
 There are a few more analysis approaches for running GAMs including the choice of smoother function (@suppfig-gamFit & @suppfig-gamSmooth) and the number of knots, or the "wiggliness" (@suppfig-gamknots) of the smoothed relationship. We can plot these different results and include the results of the DLM for comparison, note that 'cr' and 'tp' are so similar they are difficult to discern from the plot. We can do a similar comparison for the choice of k. Here we compare a four different numbers of knots (@suppfig-gamknots).
