@@ -299,12 +299,12 @@ Fit of the GAM models (lines) to observed bluegreen algae (cyanobacteria) abunda
 # Predict smooth over date
 # Predict smooth over date
 model_colors <- viridisLite::viridis(n = 5, option = "mako")
-grid_B <- data.frame(n_date = seq(min(dat$n_date), max(dat$n_date), length.out = 100))
+grid_B <- data.frame(n_date = dat$n_date, date = dat$date)
 pred_B <- predict(gam_cr4, newdata = grid_B, se.fit = TRUE)
 grid_B$fit <- pred_B$fit
 grid_B$se <- pred_B$se
 
-pB <- ggplot(grid_B, aes(n_date, fit)) +
+pB <- ggplot(grid_B, aes(date, fit)) +
   geom_line(color = model_colors[1], linewidth = 1.2) +
   geom_ribbon(aes(ymin = fit - 2*se, ymax = fit + 2*se), alpha = 0.3, fill = model_colors[1]) +
   theme_bw() +
@@ -324,7 +324,7 @@ pC <- ggplot(grid_C, aes(lagged_zp, fit)) +
   theme_bw() +
   labs(
     title = "Smooth of Phosphorus: s(Phos)",
-    x = "Phosphorus", y = "Effect"
+    x = "Z-scored Phosphorus", y = "Effect"
   )
 
 # This panel is for s(n_date, by = lagged_zp)
@@ -332,14 +332,15 @@ pC <- ggplot(grid_C, aes(lagged_zp, fit)) +
 zp_vals <- quantile(dat$lagged_zp, probs = c(0.1, 0.5, 0.9))
 grid_D <- expand.grid(
   lagged_zp = zp_vals,
-  n_date = seq(min(dat$n_date), max(dat$n_date), length.out = 100)
+  n_date = dat$n_date
 )
+grid_D$date <- dat$date[grid_D$n_date]
 pred_D <- predict(gam_cr3, newdata = grid_D, se.fit = TRUE)
 grid_D$fit <- pred_D$fit
 grid_D$se <- pred_D$se
 grid_D$group <- factor(grid_D$lagged_zp, labels = c("Low Phos", "Med Phos", "High Phos"))
 
-pD <- ggplot(grid_D, aes(n_date, fit, color = group, fill = group)) +
+pD <- ggplot(grid_D, aes(date, fit, color = group, fill = group)) +
   geom_line(linewidth = 1.2) +
   geom_ribbon(aes(ymin = fit - 2*se, ymax = fit + 2*se), alpha = 0.2, color = NA) +
   scale_color_viridis_d(name = "Phosphorus", begin=0.2, end = 0.8) +
@@ -353,13 +354,14 @@ pD <- ggplot(grid_D, aes(n_date, fit, color = group, fill = group)) +
 # This panel is for s(lagged_zp, by = n_date)
 grid_E <- expand.grid(
   lagged_zp = seq(min(dat$lagged_zp), max(dat$lagged_zp), length.out = 200),
-  n_date = c(25, 75, 125)
+  n_date = c(25, 73, 121)
 )
 
 pred_E <- predict(gam_cr2, newdata = grid_E, se.fit = TRUE)
 grid_E$fit <- pred_E$fit
 grid_E$se <- pred_E$se
-grid_E$date_label <- factor(paste0("Day ", grid_E$n_date), levels = c("Day 25", "Day 75", "Day 125"))
+grid_E$date_label <- factor(paste0("Day ", grid_E$n_date),
+                            labels = c("June 1964", "June 1968", "June 1972"))
 
 pE <- ggplot(grid_E, aes(lagged_zp, fit, color = date_label, fill = date_label)) +
   geom_line(linewidth = 1.2) +
@@ -369,7 +371,7 @@ pE <- ggplot(grid_E, aes(lagged_zp, fit, color = date_label, fill = date_label))
   theme_bw() +
   labs(
     title = "Phosphorus effect by date: s(Phos, by = date)",
-    x = "Phosphorus", y = "Effect"
+    x = "Z-scored Phosphorus", y = "Effect"
   )
 
 grid_F <- expand.grid(
