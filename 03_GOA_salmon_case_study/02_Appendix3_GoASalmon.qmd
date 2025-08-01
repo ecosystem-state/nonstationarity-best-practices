@@ -192,7 +192,7 @@ The relationship between salmon catch and SST anomalies before and after the 198
 We fit two distinct GAM models to the salmon catch data and SST anomalies to illustrate the differences in a model with a time-varying slope and a time-varying intercept, and a model that only has a time-varying slope. We find that when fitting a time-varying slope and time-varying intercept model, most of the variability in the relationship is explained by the time-varying intercept (@suppfig-tvintgam) while the time-varying slope does not change much through time (@suppfig-tvslopegam). When only a time-varying slope is fit to the data, the slope parameter is much more variable through time (@suppfig-tvslopegam), and looks similar to the slope estimated by the linear models (@suppfig-fitslm). 
 
 ```{r,include=FALSE}
-dat_aksalmon <- readRDS("data_for_AK_salmon_example.rds")
+dat_aksalmon <- readRDS("../03_GOA_salmon_case_study/data_for_AK_salmon_example.rds")
 col<-paletteer_d("nationalparkcolors::Everglades")
 #renaming
 dat_aksalmon <- dplyr::rename(dat_aksalmon,
@@ -262,6 +262,28 @@ int_panel_gam <- ggplot(coefs_gam, aes(date, int_est, group = time_varying, fill
   )
 
 
+```
+
+```{r echo = FALSE}
+resid_df1 <- data.frame(resid = resid(gam_aksalmon_1),
+                       date = dat_aksalmon$date,
+                       Model = "Intercept + slope")
+resid_df2 <- data.frame(resid = resid(gam_aksalmon_2),
+                       date = dat_aksalmon$date,
+                       Model = "Slope")
+resids <- rbind(resid_df1, resid_df2)
+ggplot(resids, aes(date, resid)) + 
+  geom_point() + 
+  geom_smooth() + 
+  theme_bw() + xlab("Date") + ylab("Residuals") + 
+  facet_wrap(~ Model, ncol=1) + ggtitle("GAM Residuals")
+```
+
+```{r echo = FALSE}
+ggplot(resids, aes(sample = resid)) + stat_qq() + stat_qq_line() + labs(
+    x = "Theoretical Quantiles",
+    y = "Sample Quantiles"
+  ) + theme_bw() + facet_wrap(~ Model,scale="free_y") + ggtitle("GAM Residuals")
 ```
 
 ::: {#suppfig-tvintgam}
@@ -369,10 +391,37 @@ int_panel <- ggplot(coefs, aes(date, int_est, group = time_varying, fill=time_va
 
 ```
 
+\break
 
 ## DLM
 
 We fit two distinct DLM models to the salmon catch data and SST anomalies to compare to the results of the GAM models. Generally, the parameters estimated by the DLM are more certain and follow similar patterns through time as the GAM (@suppfig-tvint & @suppfig-tvslope). There is also more interannual variability in the parameter estimates of the DLM compared to the continuously smoothed pattern of the GAM. 
+
+```{r echo=FALSE}
+pred <- predict(dlm_aksalmon_1)$pred
+pred2 <- predict(dlm_aksalmon_2)$pred
+
+resid_df1 <- data.frame(resid = pred$y - pred$estimate,
+                       date = dat_aksalmon$date,
+                       Model = "Intercept + slope")
+resid_df2 <- data.frame(resid = pred2$y - pred2$estimate,
+                       date = dat_aksalmon$date,
+                       Model = "Slope")
+resids <- rbind(resid_df1, resid_df2)
+ggplot(resids, aes(date, resid)) + 
+  geom_point() + 
+  geom_smooth() + 
+  theme_bw() + xlab("Date") + ylab("Residuals") + 
+  facet_wrap(~ Model, ncol=1, scale="free_y") + ggtitle("DLM Residuals")
+```
+
+```{r echo = FALSE}
+ggplot(resids, aes(sample = resid)) + stat_qq() + stat_qq_line() + labs(
+    x = "Theoretical Quantiles",
+    y = "Sample Quantiles"
+  ) + theme_bw() + facet_wrap(~ Model,scale="free_y") + ggtitle("DLM Residuals")
+```
+
 
 ::: {#suppfig-tvint}
 ```{r, echo=FALSE}
