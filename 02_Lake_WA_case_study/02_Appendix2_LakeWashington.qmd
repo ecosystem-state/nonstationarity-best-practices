@@ -30,7 +30,7 @@ library(lubridate)
 library(viridis)
 library(paletteer)
 library(ggpubr)
-
+library(patchwork)
 col<-paletteer_d("nationalparkcolors::Everglades")
 ```
 
@@ -191,7 +191,7 @@ Fit of the DLM model with time-varying slope (black line) to observed bluegreen 
 
 And we can examine the residuals for a temporal trend, and see that because the DLM is flexible, there's not much evidence of a trend
 
-```{r}
+```{r echo = FALSE}
 resid_dlm <- predict(dlm_1)$pred
 resid_dlm$resid <- resid_dlm$y - resid_dlm$estimate
 resid_dlm$date <- dat$date
@@ -199,7 +199,14 @@ resid_dlm$date <- dat$date
 ggplot(resid_dlm, aes(date, resid)) + 
   geom_point() + 
   geom_smooth() + 
-  theme_bw() + xlab("Date") + ylab("Residuals")
+  theme_bw() + xlab("Date") + ylab("Residuals") + ggtitle("DLM Residuals")
+```
+
+```{r echo = FALSE}
+ggplot(resid_dlm, aes(sample = resid)) + stat_qq() + stat_qq_line() + labs(
+    x = "Theoretical Quantiles",
+    y = "Sample Quantiles"
+  ) + theme_bw() + ggtitle("DLM Residuals")
 ```
 
 ## GAMs
@@ -289,6 +296,7 @@ Fit of the GAM models (lines) to observed bluegreen algae (cyanobacteria) abunda
 :::
 
 ```{r, include= FALSE}
+# Predict smooth over date
 # Predict smooth over date
 model_colors <- viridisLite::viridis(n = 5, option = "mako")
 grid_B <- data.frame(n_date = seq(min(dat$n_date), max(dat$n_date), length.out = 100))
@@ -409,11 +417,15 @@ ggplot(resid, aes(date, resid, group = Model)) +
   geom_point() + 
   geom_smooth() + theme_bw() + 
   facet_wrap(~ Model) + xlab("Date") + 
-  ylab("Residuals")
+  ylab("Residuals") + ggtitle("GAM Residuals")
 
 ```
 
-```{}
+```{r echo=FALSE}
+ggplot(resid, aes(sample = resid)) + stat_qq() + stat_qq_line() + labs(
+    x = "Theoretical Quantiles",
+    y = "Sample Quantiles"
+  ) + theme_bw() + facet_wrap(~ Model) + ggtitle("GAM Residuals")
 ```
 
 There are a few more analysis approaches for running GAMs including the choice of smoother function (@suppfig-gamFit & @suppfig-gamSmooth) and the number of knots, or the "wiggliness" (@suppfig-gamknots) of the smoothed relationship. We can plot these different results and include the results of the DLM for comparison, note that 'cr' and 'tp' are so similar they are difficult to discern from the plot. We can do a similar comparison for the choice of k. Here we compare a four different numbers of knots (@suppfig-gamknots).
@@ -532,49 +544,49 @@ Effect of smoothing degrees of freedom on the standard errors of the estimates o
 ```{r, include=FALSE}
 
 #Coding Figure 2 all together
-
-panel.a <- ggplot(d_all, aes(date, y_adj, col = smooth)) + 
-  geom_point(col="grey") + 
-  theme_bw() + 
-  xlab("Year")+
-    geom_ribbon(aes(ymin = pred-2*se, ymax = pred+2*se, y = NULL, fill=smooth),
-              alpha = 0.15, colour = NA)+
-  scale_fill_manual(values=c(col[4],col[3],col[2]))+
-  scale_colour_manual(values=c(col[4],col[3],col[2]))+
-  geom_line(aes(date, pred), size=1.5,alpha=0.5) + 
-  xlab("") + ylab("Detrended cyanobacteria")  
- # scale_color_viridis_d(option="magma",begin=0.2, end=0.8)
-
-panel.b <-ggplot(df_smooth_knots, aes(date, est, col=knots, fill=knots)) + 
-  geom_line(aes(date,est-2*se), alpha=0.5, linetype=2) + 
-  geom_line(aes(date,est+2*se), alpha=0.5, linetype=2) + 
-     geom_ribbon(aes(ymin = est-2*se, ymax = est+2*se, y = NULL, fill=knots),
-              alpha = 0.1, colour = NA)+ 
-  geom_line(aes(date,est), alpha=0.6, lwd=0.75) + 
-  ylim(c(-17,21))+
-  scale_colour_manual(values=c(col[4],col[5],col[3],col[1]))+
-  scale_fill_manual(values=c(col[4],col[5],col[3],col[1]))+ 
-  #ggtitle("Effect of smoothing DF on SEs")+
-  theme_bw() + xlab("") + ylab("Phosphorous effect on blue-green algae \n (Time-varying slope)") 
-
-panel.c<-ggplot(df_smooth_type, aes(date, est, col=type)) + 
-       geom_ribbon(aes(ymin = est-2*se, ymax = est+2*se, y = NULL, fill=type),
-              alpha = 0.05, colour = NA)+ 
-  geom_line(aes(date,est-2*se), alpha=0.5, linetype=2) + 
-  geom_line(aes(date,est+2*se), alpha=0.5, linetype=2) + 
-  geom_line(aes(date,est), alpha=0.6, lwd=0.75) + 
-  scale_colour_manual(values=c(col[5],col[4],col[3],col[1]))+
-  scale_fill_manual(values=c(col[5],col[4],col[3],col[1]))+ 
-  #ggtitle("Effect of choice of GAM smooth")+
-  #ylim(c(-17,21))+
-  theme_bw() + xlab("") + ylab("") 
-
-bottom_panel <-ggarrange(panel.b, panel.c,widths=c(1.05,1), nrow=1,labels=c("B.", "C."))
-bottom_panel<-annotate_figure(bottom_panel, bottom = text_grob("Date"))
-
-top_panel<-ggarrange(panel.a,labels=c("A."),nrow=1)
-
-figure2<-ggarrange(top_panel,bottom_panel, nrow=2)
-figure2
-ggsave(figure2, filename = "Figure_S2_GAMtypes.png",bg="white", height = 8, width=8.5)
+# 
+# panel.a <- ggplot(d_all, aes(date, y_adj, col = smooth)) + 
+#   geom_point(col="grey") + 
+#   theme_bw() + 
+#   xlab("Year")+
+#     geom_ribbon(aes(ymin = pred-2*se, ymax = pred+2*se, y = NULL, fill=smooth),
+#               alpha = 0.15, colour = NA)+
+#   scale_fill_manual(values=c(col[4],col[3],col[2]))+
+#   scale_colour_manual(values=c(col[4],col[3],col[2]))+
+#   geom_line(aes(date, pred), size=1.5,alpha=0.5) + 
+#   xlab("") + ylab("Detrended cyanobacteria")  
+#  # scale_color_viridis_d(option="magma",begin=0.2, end=0.8)
+# 
+# panel.b <-ggplot(df_smooth_knots, aes(date, est, col=knots, fill=knots)) + 
+#   geom_line(aes(date,est-2*se), alpha=0.5, linetype=2) + 
+#   geom_line(aes(date,est+2*se), alpha=0.5, linetype=2) + 
+#      geom_ribbon(aes(ymin = est-2*se, ymax = est+2*se, y = NULL, fill=knots),
+#               alpha = 0.1, colour = NA)+ 
+#   geom_line(aes(date,est), alpha=0.6, lwd=0.75) + 
+#   ylim(c(-17,21))+
+#   scale_colour_manual(values=c(col[4],col[5],col[3],col[1]))+
+#   scale_fill_manual(values=c(col[4],col[5],col[3],col[1]))+ 
+#   #ggtitle("Effect of smoothing DF on SEs")+
+#   theme_bw() + xlab("") + ylab("Phosphorous effect on blue-green algae \n (Time-varying slope)") 
+# 
+# panel.c<-ggplot(df_smooth_type, aes(date, est, col=type)) + 
+#        geom_ribbon(aes(ymin = est-2*se, ymax = est+2*se, y = NULL, fill=type),
+#               alpha = 0.05, colour = NA)+ 
+#   geom_line(aes(date,est-2*se), alpha=0.5, linetype=2) + 
+#   geom_line(aes(date,est+2*se), alpha=0.5, linetype=2) + 
+#   geom_line(aes(date,est), alpha=0.6, lwd=0.75) + 
+#   scale_colour_manual(values=c(col[5],col[4],col[3],col[1]))+
+#   scale_fill_manual(values=c(col[5],col[4],col[3],col[1]))+ 
+#   #ggtitle("Effect of choice of GAM smooth")+
+#   #ylim(c(-17,21))+
+#   theme_bw() + xlab("") + ylab("") 
+# 
+# bottom_panel <-ggarrange(panel.b, panel.c,widths=c(1.05,1), nrow=1,labels=c("B.", "C."))
+# bottom_panel<-annotate_figure(bottom_panel, bottom = text_grob("Date"))
+# 
+# top_panel<-ggarrange(panel.a,labels=c("A."),nrow=1)
+# 
+# figure2<-ggarrange(top_panel,bottom_panel, nrow=2)
+# figure2
+# ggsave(figure2, filename = "Figure_S2_GAMtypes.png",bg="white", height = 8, width=8.5)
 ```
