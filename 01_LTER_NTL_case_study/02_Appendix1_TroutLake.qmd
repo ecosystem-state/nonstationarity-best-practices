@@ -365,7 +365,7 @@ results_window<-sf_fun(2023:1992,window)
 p <- ggplot(results_window, aes(x=last_year, y=as.factor(window), fill= Slope)) + 
   geom_tile()+
   xlab("Last Year")+
-  ylab("Window")+
+  ylab("Time Period")+
   scale_fill_gradient2(low = col[2],
                        mid = "#FFFFCC",
                        high = col[3], midpoint = 0)
@@ -374,7 +374,7 @@ p
 p <- ggplot(results_window, aes(x=last_year, y=as.factor(window), fill= Intercept)) + 
   geom_tile()+
   xlab("Last Year")+
-  ylab("Window")+
+  ylab("Time Period")+
   scale_fill_gradient2(low = "#075AFF",
                        mid = "#FFFFCC",
                        high = "#FF0000", midpoint = 6)
@@ -477,7 +477,7 @@ panel_d<-rw_intercept <-
   ggplot(results_window, aes(x=last_year, y=as.factor(window), fill= Intercept)) + 
   geom_tile()+
   xlab("")+
-  ylab("Window Length (Years)")+
+  ylab("Time Period Length (Years)")+
       geom_vline(xintercept = c(2006.5,2014.5), lty=2)+
 
   scale_fill_gradient2(low = col[2],
@@ -492,6 +492,7 @@ panel_d
 ```{r}
 #| echo: FALSE
 #| include: FALSE
+
 summary(zoop_slope_int)
 pred<-rbind(prediction2%>%mutate(Model="GAM",
                      prediction.lwr=prediction.fit-2*prediction.se.fit,
@@ -564,6 +565,13 @@ panel_b<-ggplot(sm_df, aes(x = x, y = fit_intercept+4.758)) +
 panel_b
 #panel B
 
+annotateLTER<-data.frame(label=c("Zooplankton \n regime",
+                                "Piscivore \n regime",
+                                "Novel \n regime"),
+                        date=c(1992, 2011,2020),
+                        y=c(6.8,6.8,6.8),Model=c("GAM", "GAM", "GAM"), Dataset=c("Large_scale","Large_scale","Large_scale"))
+
+
 panel_f<-ggplot(data=pred,aes(y=prediction.fit, x=year,group=Model, col=Model)) +
   geom_line(lwd=0.7, aes(col=Model,lty=Model))+
   geom_ribbon(aes(ymin = prediction.lwr, ymax = prediction.upr, y = NULL,fill=Model),
@@ -574,27 +582,32 @@ panel_f<-ggplot(data=pred,aes(y=prediction.fit, x=year,group=Model, col=Model)) 
   guides(shape = FALSE)+
     geom_point(data=analysis_long%>%
          filter(Dataset=="mean_sec"), aes(y=values, x=year4, group=Dataset, col=Dataset),colour=col[4])+
+    geom_text(data=annotateLTER, aes(x = date, y = y, 
+                                  label = label),  
+            col='black',fontface = "italic")+
   scale_linetype_manual(values=c( "dashed","solid"))+
   theme_classic()+
+  ylim(3.5,7)+
   theme(axis.text = element_text(size = 11))+
   ylab("Predicted Water Clarity")+
   xlab("")
 
-#top_row<-ggarrange(panel_f, panel_b, panel_a, labels=c("A.", "B.", "C."), nrow=1,ncol=3, widths=c(1.5,1,1))
-#top_row<-annotate_figure(top_row, bottom = text_grob("Year", gp = gpar(cex = 1)))
-#bottom_row<-ggarrange(panel_d,panel_c, labels=c("D.", "E."), nrow=1,ncol=2)
-#bottom_row<-annotate_figure(bottom_row, bottom = textGrob("Last Year of Window", gp = gpar(cex = 1)))
-#ggarrange(top_row, bottom_row, nrow=2)
-#ggsave("Figure_1_lmgam_comparisonv2.png", height = 7, width = 11,bg="white")
+top_row<-ggarrange(panel_f, panel_b, panel_a, labels=c("A.", "B.", "C."), nrow=1,ncol=3, widths=c(1.5,1,1))
+top_row<-annotate_figure(top_row, bottom = text_grob("Year"))
+bottom_row<-ggarrange(panel_d,panel_c, labels=c("D.", "E."), nrow=1,ncol=2)
+bottom_row<-annotate_figure(bottom_row, bottom = text_grob("Last Year of Time Period"))
+ggarrange(top_row, bottom_row, nrow=2)
+ggsave("Figure_1_lmgam_comparisonv2.png", height = 7, width = 11,bg="white")
 
-#pdf(file = "Figure1.pdf",   # The directory you want to save the file in
-#    width = 8, # The width of the plot in inches
-#    height = 6) # The height of the plot in inches
+pdf(file = "Figure1.pdf",   # The directory you want to save the file in
+    width = 11, # The width of the plot in inches
+    height = 8) # The height of the plot in inches
 
-#ggarrange(panel_a, panel_b, panel_c, panel_d, labels=c("A.", "B.", "C.", "D."))
-
-#dev.off()
+ggarrange(top_row, bottom_row, nrow=2)
+dev.off()
 ```
+
+
 
 ## Figures & Tables
 
