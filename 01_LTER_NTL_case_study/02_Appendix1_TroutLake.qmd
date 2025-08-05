@@ -156,29 +156,35 @@ Interaction<-data.frame(
 
 ```
 
-Both Chlorophyll and Large Zooplankton best explain water clarity with a time-varying relationship model, rather than a time-varying abundance model.
+Both Chlorophyll and large zooplankton best explain water clarity with a time-varying relationship model, rather than a time-varying abundance model. We can look at the model residuals to see how they compare for a time-varying model versus a time-invariant model. Using the large zooplankton covariate as an example, we can see in the timeseries of residuals (@suppfig-lmresid) that there is a temporal trend, supporting a temporally structured model. We find the q-q plot is similar across the models (@suppfig-lmqq) and are mostly okay.
 
-We can examine the residuals from these two models. The trend in the residuals from the Chlorophyll model appears a little stronger in magnitude.
+```{r}
+#| echo: false
+#| include: false
+#| warning: false
 
-```{r echo = FALSE}
-resid_df <- data.frame(Model = "Large Zooplankton", 
+zoop<-lm(mean_sec~Large, data=full_data)
+
+resid_df <- data.frame(Model = "Time-Varying Large Zooplankton", 
                        resid = resid(zoop_slope_int),
                        year = full_data$year)
-resid_df2 <- data.frame(Model = "Chlorophyll", 
-                       resid = resid(chl_slope_int),
+resid_df2 <- data.frame(Model = "Time-Invariant Large Zooplankton", 
+                       resid = resid(zoop),
                        year = full_data$year)
 resid <- rbind(resid_df, resid_df2)
-ggplot(resid, aes(year, resid)) + 
+lm_resid<-ggplot(resid, aes(year, resid)) + 
   geom_point() + 
   geom_smooth() + 
   facet_wrap(~Model) + 
   theme_bw() + xlab("Year") + ylab("Residuals")
 ```
 
-Another residual check is with qq plots – both models look mostly ok
 
-```{r echo = FALSE}
-ggplot(resid, aes(sample = resid)) + stat_qq() + stat_qq_line() + labs(
+```{r}
+#| echo: false
+#| include: false
+#| warning: false
+lm_qq<-ggplot(resid, aes(sample = resid)) + stat_qq() + stat_qq_line() + labs(
     x = "Theoretical Quantiles",
     y = "Sample Quantiles"
   ) + theme_bw() + facet_wrap(~ Model)
@@ -306,23 +312,56 @@ prediction2[36,]
 
 ```
 
-We can do similar residual diagnostics with the GAM model used. There doesn't appear to be a temporal trend or issue with the QQ plots.
+We can do similar residual diagnostics with the GAM model used. We can see that in a model that does not include a smooth by year term, there is a temporal trend in the residuals, but this is resolved when a smooth by year is implemented (@suppfig-gamresid). There doesn't appear to be issues with the QQ plots for any specification (@suppfig-gamqq).
 
 ```{r echo = FALSE}
-resid_df <- data.frame(resid = resid(gam1),
-                       year = full_data$year4)
-ggplot(resid_df, aes(year, resid)) + 
+#| echo: false
+#| include: false
+#| warning: false
+gam4<-gam(mean_sec~s(Large), data=full_data)
+gam5<-gam(mean_sec~s(year4), data=full_data)
+resid_df1 <- data.frame(Model = "Time-Varying Zooplankton", 
+                       resid = resid(gam1),
+                       year = full_data$year4,
+                       zooplankton = full_data$Large)
+resid_df2 <- data.frame(Model = "Smooth by Zooplankton", 
+                       resid = resid(gam4),
+                       year = full_data$year,
+                       zooplankton = full_data$Large)
+
+resid_df3 <- data.frame(Model = "Smooth by Year", 
+                       resid = resid(gam5),
+                       year = full_data$year,
+                       zooplankton = full_data$Large)
+resid_df <- rbind(resid_df1, resid_df2, resid_df3)
+gam_resid<-ggplot(resid_df, aes(year, resid)) + 
   geom_point() + 
   geom_smooth() + 
   theme_bw() + 
+  facet_wrap(~Model)+
   xlab("Year") + ylab("Residuals")
 ```
 
 ```{r echo = FALSE}
-ggplot(resid_df, aes(sample = resid)) + stat_qq() + stat_qq_line() + labs(
+#| echo: false
+#| include: false
+#| warning: false
+ggplot(resid_df, aes(zooplankton, resid)) + 
+  geom_point() + 
+  geom_smooth() + 
+  theme_bw() + 
+  facet_wrap(~Model)+
+  xlab("Year") + ylab("Residuals")
+```
+
+```{r echo = FALSE}
+#| echo: false
+#| include: false
+#| warning: false
+gam_qq<-ggplot(resid_df, aes(sample = resid)) + stat_qq() + stat_qq_line() + labs(
     x = "Theoretical Quantiles",
     y = "Sample Quantiles"
-  ) + theme_bw()
+  ) + theme_bw()+facet_wrap(~Model)
 
 ```
 
@@ -619,6 +658,30 @@ ts
 Standardized time series of ecological conditions observed in Trout Lake.
 :::
 
+::: {#suppfig-lmresid}
+```{r}
+#| echo: false
+#| warning: false
+
+lm_resid
+```
+
+Model residuals for the time-varying water clarity - zooplankton model compared to a time-invariant model where large zooplankton is used as a covariate without *a priori* defined time peariods
+
+:::
+
+::: {#suppfig-lmqq}
+```{r}
+#| echo: false
+#| warning: false
+
+lm_qq
+```
+
+Q-Q plot for the time-varying water clarity - zooplankton model compared to a time-invariant model where large zooplankton is used as a covariate without *a priori* defined time peariods
+
+:::
+
 ::: {#suppfig-fit}
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
 Fit_zoop
@@ -633,6 +696,30 @@ gamfit
 ```
 
 Predicted values of water clarity (black line) compared to observed values (red points) using a time-varying relationship with zooplankton abundance.
+:::
+
+::: {#suppfig-lmresid}
+```{r}
+#| echo: false
+#| warning: false
+
+gam_resid
+```
+
+Model residuals for a smooth on zooplankton abundance, a smooth on year, and a smooth on year by zooplankton. 
+
+:::
+
+::: {#suppfig-gamqq}
+```{r}
+#| echo: false
+#| warning: false
+
+gam_qq
+```
+
+Q-Q plot for a smooth on zooplankton abundance, a smooth on year, and a smooth on year by zooplankton. 
+
 :::
 
 ::: {#suppfig-slope}

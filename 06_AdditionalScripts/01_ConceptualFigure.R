@@ -8,7 +8,7 @@ library(viridis)
 library(paletteer)
 library(ggpubr)
 #set.seed(1035)
-set.seed(9450)
+set.seed(9452)
 col<-paletteer_d("nationalparkcolors::Everglades")
 col2<-col[2:4]
 # defining the mean and varince of the different parameter distributions
@@ -84,7 +84,7 @@ bplot<-ggplot(data=simulated, aes(x=parameter,group=period,fill=period)) +
 bplot
 
 
-cplot<-ggplot(data=simulated_results,) +
+cplot<-ggplot(data=simulated_results) +
   geom_point(data=simulated, aes(x=xdata,y=data1,group = period,color=period))+
   geom_abline(aes(intercept = parameter_stationary, slope = mean, color=factor(period)),lwd=1)+
  # geom_smooth(data=simulated, aes(x=xdata,y=data1,group = period,color=period,fill=period),method='lm',fullrange=T,alpha=0.2)+
@@ -100,7 +100,7 @@ cplot<-ggplot(data=simulated_results,) +
   theme(legend.position="none")
 cplot
 
-dplot<-ggplot(data=simulated_results,) +
+dplot<-ggplot(data=simulated_results) +
   geom_point(data=simulated, aes(x=xdata,y=data2,group = period,color=period))+
  geom_abline(aes(intercept = mean, slope = parameter_stationary, color=factor(period)),lwd=1)+
   #geom_ribbon(aes(group = period,y=mean,ymax=ymax,ymin=ymin, xmin=0.5, xmax=1.5), fill='grey')+
@@ -110,7 +110,7 @@ dplot<-ggplot(data=simulated_results,) +
   scale_fill_manual(values=col2,labels = c("1950 - 1966", "1966 - 1986", "1986 - 2011"))+
   xlab("Driver")+
   ylab("")+
- # ylim(c(-1,1))+
+ xlim(c(-1,1))+
   theme_bw()+
   theme(plot.title = element_text(hjust = 0.5))+ 
   theme(legend.position="none")
@@ -150,8 +150,12 @@ fplot<-ggplot(data=simulated,aes(x=Year,y=sim,color=period,fill=period)) +
   theme(legend.position="none")
 fplot
 
- gplot<-ggplot(data=simulated, aes(x=sim,group=period,fill=period)) +
-  geom_density(alpha=0.8)+
+param=data.frame(sim=arima.sim(n = 1000,list(ar=.5),rand.gen = rnorm,
+                    sd = 0.1833333, mean=-0.03333333))
+
+ gplot<-ggplot(data=simulated, aes(x=sim)) +
+  geom_density(alpha=0.8,aes(group=period,fill=period))+
+  geom_density(data=param,alpha=0.8, lwd=1, lty=2)+
   xlim(c(-1,1))+
   scale_fill_manual(values=col2,labels = c("1950 - 1966", "1966 - 1986", "1986 - 2011"))+
   theme_bw()+ 
@@ -172,3 +176,6 @@ pdf(file = "Figures/Figure1_Theorhetical.pdf",   # The directory you want to sav
        height = 9)
 ggarrange(row1a,row2,row3a,nrow=3,ncol=1)
 dev.off()
+
+ggsave(ggarrange(row1a,row2,row3a,nrow=3,ncol=1),bg="white", filename = "Figures/Figure1_Theorhetical.png", 
+       height = 9, width=9)
