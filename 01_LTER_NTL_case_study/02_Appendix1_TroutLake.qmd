@@ -179,7 +179,6 @@ lm_resid<-ggplot(resid, aes(year, resid)) +
   theme_bw() + xlab("Year") + ylab("Residuals")
 ```
 
-
 ```{r}
 #| echo: false
 #| include: false
@@ -346,12 +345,12 @@ gam_resid<-ggplot(resid_df, aes(year, resid)) +
 #| echo: false
 #| include: false
 #| warning: false
-ggplot(resid_df, aes(zooplankton, resid)) + 
+ggplot(resid_df, aes(scale(zooplankton), resid)) + 
   geom_point() + 
   geom_smooth() + 
   theme_bw() + 
   facet_wrap(~Model)+
-  xlab("Year") + ylab("Residuals")
+  xlab("Zooplanktion") + ylab("Residuals")
 ```
 
 ```{r echo = FALSE}
@@ -646,8 +645,6 @@ ggarrange(top_row, bottom_row, nrow=2)
 dev.off()
 ```
 
-
-
 ## Figures & Tables
 
 ::: {#suppfig-TS}
@@ -667,7 +664,6 @@ lm_resid
 ```
 
 Model residuals for the time-varying water clarity - zooplankton model compared to a time-invariant model where large zooplankton is used as a covariate without *a priori* defined time peariods
-
 :::
 
 ::: {#suppfig-lmqq}
@@ -679,7 +675,6 @@ lm_qq
 ```
 
 Q-Q plot for the time-varying water clarity - zooplankton model compared to a time-invariant model where large zooplankton is used as a covariate without *a priori* defined time peariods
-
 :::
 
 ::: {#suppfig-fit}
@@ -706,8 +701,7 @@ Predicted values of water clarity (black line) compared to observed values (red 
 gam_resid
 ```
 
-Model residuals for a smooth on zooplankton abundance, a smooth on year, and a smooth on year by zooplankton. 
-
+Model residuals for a smooth on zooplankton abundance, a smooth on year, and a smooth on year by zooplankton.
 :::
 
 ::: {#suppfig-gamqq}
@@ -718,8 +712,7 @@ Model residuals for a smooth on zooplankton abundance, a smooth on year, and a s
 gam_qq
 ```
 
-Q-Q plot for a smooth on zooplankton abundance, a smooth on year, and a smooth on year by zooplankton. 
-
+Q-Q plot for a smooth on zooplankton abundance, a smooth on year, and a smooth on year by zooplankton.
 :::
 
 ::: {#suppfig-slope}
