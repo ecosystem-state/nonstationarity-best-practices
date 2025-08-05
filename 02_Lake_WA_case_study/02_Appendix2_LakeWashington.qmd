@@ -240,6 +240,7 @@ pred_5$smooth <- "Panel F: te(Phos, date)"
 
 # Combine all predictions
 d_all <- rbind(pred_4, pred_1, pred_3, pred_2, pred_5)
+d_allv2 <- rbind(pred_4, pred_1, pred_3, pred_2)
 
 # Create the plot (Panel A)
 pA <- ggplot(d_all, aes(date, y_adj, col = smooth)) + 
@@ -247,7 +248,22 @@ pA <- ggplot(d_all, aes(date, y_adj, col = smooth)) +
   geom_line(aes(y = pred), linewidth = 1.5, alpha = 0.7) + 
   theme_bw() + 
   xlab("") + 
-  ylab("Detrended cyanobacteria") + 
+  ylab("Deseasoned cyanobacteria") + 
+  scale_color_viridis_d(
+    option = "mako",
+    begin = 0.1,
+    end = 0.9,
+    name = "Model"
+  ) +
+  labs(title = "Observed vs. predicted fits from all GAMs")
+
+d_allv2 <- rbind(pred_4, pred_1, pred_3, pred_2)
+pAv2 <- ggplot(d_allv2, aes(date, y_adj, col = smooth)) + 
+  geom_point(col = "black", alpha = 0.4) + 
+  geom_line(aes(y = pred), linewidth = 1.5, alpha = 0.7) + 
+  theme_bw() + 
+  xlab("Date") + 
+  ylab("Seasonally detrended cyanobacteria") + 
   scale_color_viridis_d(
     option = "mako",
     begin = 0.1,
@@ -355,14 +371,19 @@ pF <- ggplot(grid_F, aes(n_date, lagged_zp, fill = fit)) +
     x = "Date", y = "Phosphorus",
     fill = "Effect"
   )
+blank<-ggplot()+theme(plot.background = element_rect(fill = "white"))+ theme_void()
+row2<-ggarrange(pB, blank, pC,blank,nrow=1,ncol=4,widths=c(4,1.3,4,1.3),labels=c("B.","","C.",""))
+row3<-ggarrange(pD, pE,nrow=1,ncol=2,labels=c("D.","E."))
+bottom_panels<-ggarrange(row2,row3,nrow=2,ncol=1)
 
-final_plot <- (pA + pB + pC + pD + pE + pF) +
+final_plotv2 <- ggarrange(pAv2, bottom_panels,nrow=2,labels=c("A.", ""))
+final_plot <- (pA + pB + pC + pD + pE) +
   plot_layout(ncol = 2, nrow = 3) +
   plot_annotation(tag_levels = "A") &
   theme(plot.tag.position = c(0.01, 0.98))
 
 # Save the combined figure
-ggsave(plot=final_plot, filename="gam_comparison_grid.png", height = 8, width = 10)
+ggsave(final_plotv2, filename="gam_comparison_gridv2.png", height = 8, width = 10, bg="white")
 ```
 
 It is important to also examine the residuals from these models. For example, we can look at the residuals for the GAMs fit to the Lake Washington data. In looking across models, those that do not include time-varying parameters show evidence of a persistent trend in the residuals that is not accounted for by the model ((@suppfig-gamresid) despite teh q-q plot being reasonable for all model specifications ((@suppfig-gamqq).
