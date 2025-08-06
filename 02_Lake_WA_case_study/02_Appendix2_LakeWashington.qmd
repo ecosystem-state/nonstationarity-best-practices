@@ -43,13 +43,13 @@ dat <- as.data.frame(MARSS::lakeWAplanktonRaw)
 dat$date <- make_date(dat$Year, dat$Month, day = 1)
 ```
 
-In Lake WA the major change ecosystem change is related to sewage in the lake – adding wastewater plants in the 1960s reduced phosphorous (@suppfig-TSphos) and in turn, blue green algae (@suppfig-TSbg) which can be seen by examining time series plots of the data. 
+In Lake WA the major change ecosystem change is related to sewage in the lake – adding wastewater plants in the 1960s reduced phosphorous (@suppfig-TSphos) and in turn, blue green algae (@suppfig-TSbg) which can be seen by examining time series plots of the data.
 
 ```{r, include=FALSE}
 tsphos <- ggplot(dat, aes(date, TP)) + 
-  geom_point() + ylab("Total phosphorus") + xlab("") + theme_bw()
+  geom_point() + ylab("Total phosphorus") + xlab("") + theme_classic()
 tsbg <- ggplot(dat, aes(date, log(Bluegreens+1))) + 
-  geom_point() + ylab("Ln Blue-green algae") + xlab("") + theme_bw()
+  geom_point() + ylab("Ln Blue-green algae") + xlab("") + theme_classic()
 #gridExtra::grid.arrange(p1,p2,nrow=2)
 
 ```
@@ -82,7 +82,6 @@ dat <- dplyr::group_by(dat, Month) %>%
 ```
 
 Last, we should look at the lags between driver and response relationships which we can do using a CCF (@suppfig-CCF). The CCF here indicates a 2-4 month lag, where TP and algae are more strongly associated with one another.
-
 
 We'll use a lag of 4 months, which we can apply as follows:
 
@@ -135,10 +134,8 @@ dat$slope_est <- dlm_1$states[2,]
 dat$slope_se <- dlm_1$states.se[2,]
 DLM_plot <- ggplot(dat, aes(date, slope_est)) +
 geom_ribbon(aes(ymin=slope_est-2*slope_se, ymax = slope_est+2*slope_se), alpha=0.6) +
-geom_line() + ylab("Time-varying slope") + xlab("") + theme_bw()
+geom_line() + ylab("Time-varying slope") + xlab("") + theme_classic()
 ```
-
-
 
 ```{r, echo=FALSE}
 pred <- fitted(dlm_1)
@@ -147,10 +144,9 @@ dlmFit<-ggplot(dat, aes(date, pred)) +
 geom_line() +
 ylab("De-seasoned Ln blue-green algae") +
 xlab("Date") +
-theme_bw() +
+theme_classic() +
 geom_point(aes(date,y_adj), col="red",alpha=0.5)
 ```
-
 
 And we can examine the residuals for a temporal trend, and see that because the DLM is flexible, there's not much evidence of a trend (@suppfig-dlmresid) and there are no issues wiht the q-q plot (@suppfig-dlmqq).
 
@@ -166,7 +162,7 @@ resid_dlm$date <- dat$date
 dlm_resid<- ggplot(resid_dlm, aes(date, resid)) + 
   geom_point() + 
   geom_smooth() + 
-  theme_bw() + xlab("Date") + ylab("Residuals") + ggtitle("DLM Residuals")
+  theme_classic() + xlab("Date") + ylab("Residuals") + ggtitle("DLM Residuals")
 ```
 
 ```{r}
@@ -177,7 +173,7 @@ dlm_resid<- ggplot(resid_dlm, aes(date, resid)) +
 dlm_qq<-ggplot(resid_dlm, aes(sample = resid)) + stat_qq() + stat_qq_line() + labs(
     x = "Theoretical Quantiles",
     y = "Sample Quantiles"
-  ) + theme_bw() + ggtitle("DLM Residuals")
+  ) + theme_classic() + ggtitle("DLM Residuals")
 ```
 
 ## GAMs
@@ -205,7 +201,7 @@ se = plot_cr1[[1]]$se)
 ```{r, echo=FALSE}
 p1 <- ggplot(df_cr1, aes(x, est)) +
 geom_ribbon(aes(ymin = est - 2*se, ymax = est + 2*se), alpha = 0.4, col = NA, fill=viridis(1)) +
-theme_bw() +
+theme_classic() +
 geom_line(col = viridis(1)) + 
 xlab("Phosphorous") +
 ylab("Effect")
@@ -238,15 +234,20 @@ pred_5$pred <- predict(gam_cr5, se.fit = TRUE)$fit
 pred_5$se <- predict(gam_cr5, se.fit = TRUE)$se.fit
 pred_5$smooth <- "Panel F: te(Phos, date)"
 
-# Combine all predictions
-d_all <- rbind(pred_4, pred_1, pred_3, pred_2, pred_5)
-d_allv2 <- rbind(pred_4, pred_1, pred_3, pred_2)
+pred_6 <- dat
+pred_6$se <- predict(gam_cr5, se.fit = TRUE)$se.fit
+pred_6$smooth <- "DLM"
 
+# Combine all predictions
+d_all <- rbind(pred_4, pred_1, pred_3, pred_2, pred_5, pred_6)
+d_allv2 <- rbind(pred_4, pred_1, pred_3, pred_2)
+pred<-pred%>%mutate(smooth="DLM")%>%
+  mutate(date=as.Date(t))
 # Create the plot (Panel A)
 pA <- ggplot(d_all, aes(date, y_adj, col = smooth)) + 
   geom_point(col = "black", alpha = 0.4) + 
   geom_line(aes(y = pred), linewidth = 1.5, alpha = 0.7) + 
-  theme_bw() + 
+  theme_classic() + 
   xlab("") + 
   ylab("Deseasoned cyanobacteria") + 
   scale_color_viridis_d(
@@ -261,7 +262,7 @@ d_allv2 <- rbind(pred_4, pred_1, pred_3, pred_2)
 pAv2 <- ggplot(d_allv2, aes(date, y_adj, col = smooth)) + 
   geom_point(col = "black", alpha = 0.4) + 
   geom_line(aes(y = pred), linewidth = 1.5, alpha = 0.7) + 
-  theme_bw() + 
+  theme_classic() + 
   xlab("Date") + 
   ylab("Seasonally detrended cyanobacteria") + 
   scale_color_viridis_d(
@@ -273,8 +274,6 @@ pAv2 <- ggplot(d_allv2, aes(date, y_adj, col = smooth)) +
   labs(title = "Observed vs. predicted fits from all GAMs")
 
 ```
-
-
 
 ```{r, include= FALSE}
 # Predict smooth over date
@@ -288,10 +287,10 @@ grid_B$se <- pred_B$se
 pB <- ggplot(grid_B, aes(date, fit)) +
   geom_line(color = model_colors[1], linewidth = 1.2) +
   geom_ribbon(aes(ymin = fit - 2*se, ymax = fit + 2*se), alpha = 0.3, fill = model_colors[1]) +
-  theme_bw() +
+  theme_classic() +
   labs(
     title = "Smooth of Date: s(date)",
-    x = "Date", y = "Effect"
+    x = "", y = "Effect"
   )
 
 grid_C <- data.frame(lagged_zp = seq(min(dat$lagged_zp), max(dat$lagged_zp), length.out = 100))
@@ -302,10 +301,10 @@ grid_C$se <- pred_C$se
 pC <- ggplot(grid_C, aes(lagged_zp, fit)) +
   geom_line(color = model_colors[2], linewidth = 1.2) +
   geom_ribbon(aes(ymin = fit - 2*se, ymax = fit + 2*se), alpha = 0.3, fill = model_colors[2]) +
-  theme_bw() +
+  theme_classic() +
   labs(
     title = "Smooth of Phosphorus: s(Phos)",
-    x = "Z-scored Phosphorus", y = "Effect"
+    x = "", y = "Effect"
   )
 
 # This panel is for s(n_date, by = lagged_zp)
@@ -326,7 +325,7 @@ pD <- ggplot(grid_D, aes(date, fit, color = group, fill = group)) +
   geom_ribbon(aes(ymin = fit - 2*se, ymax = fit + 2*se), alpha = 0.2, color = NA) +
   scale_color_viridis_d(name = "Phosphorus", begin=0.2, end = 0.8) +
   scale_fill_viridis_d(name = "Phosphorus", begin=0.2, end = 0.8) +
-  theme_bw() +
+  theme_classic() +
   labs(
     title = "Time effect by Phosphorus: s(date, by = Phos)",
     x = "Date", y = "Effect"
@@ -349,7 +348,7 @@ pE <- ggplot(grid_E, aes(lagged_zp, fit, color = date_label, fill = date_label))
   geom_ribbon(aes(ymin = fit - 2 * se, ymax = fit + 2 * se), alpha = 0.2, color = NA) +
   scale_color_viridis_d(name = "Date", begin=0.2, end = 0.8) +
   scale_fill_viridis_d(name = "Date", begin=0.2, end = 0.8) +
-  theme_bw() +
+  theme_classic() +
   labs(
     title = "Phosphorus effect by date: s(Phos, by = date)",
     x = "Z-scored Phosphorus", y = "Effect"
@@ -365,7 +364,7 @@ grid_F$fit <- pred_F$fit
 pF <- ggplot(grid_F, aes(n_date, lagged_zp, fill = fit)) +
   geom_raster(interpolate = TRUE) +
   scale_fill_viridis_c(option = "C") +
-  theme_bw() +
+  theme_classic() +
   labs(
     title = "Tensor interaction: te(Phos, date)",
     x = "Date", y = "Phosphorus",
@@ -403,7 +402,7 @@ resid_df_5 <- data.frame(date = dat$date, resid = resid(gam_cr5),
 resid <- rbind(resid_df_1, resid_df_2, resid_df_3, resid_df_4, resid_df_5)
 gam_resid<-ggplot(resid, aes(date, resid, group = Model)) + 
   geom_point() + 
-  geom_smooth() + theme_bw() + 
+  geom_smooth() + theme_classic() + 
   facet_wrap(~ Model) + xlab("Date") + 
   ylab("Residuals") + ggtitle("GAM Residuals")
 
@@ -413,7 +412,7 @@ gam_resid<-ggplot(resid, aes(date, resid, group = Model)) +
 gam_qq<- ggplot(resid, aes(sample = resid)) + stat_qq() + stat_qq_line() + labs(
     x = "Theoretical Quantiles",
     y = "Sample Quantiles"
-  ) + theme_bw() + facet_wrap(~ Model) + ggtitle("GAM Residuals")
+  ) + theme_classic() + facet_wrap(~ Model) + ggtitle("GAM Residuals")
 ```
 
 There are a few more analysis approaches for running GAMs including the choice of smoother function (@suppfig-gamFit & @suppfig-gamSmooth) and the number of knots, or the "wiggliness" (@suppfig-gamknots) of the smoothed relationship. We can plot these different results and include the results of the DLM for comparison, note that 'cr' and 'tp' are so similar they are difficult to discern from the plot. We can do a similar comparison for the choice of k. Here we compare a four different numbers of knots (@suppfig-gamknots), we show an intentionally wide range of k (30 - 120) to illustrate the effects of k on estimated uncertainty, in practice k should be specified based on degrees of freedom and expectations of variability through time.
@@ -436,7 +435,7 @@ dat$pred_gam <- predict(gam_tp)
 
 gam_smooth<- ggplot(dat, aes(date, pred)) + 
   geom_line() + ylab("De-seasoned Ln blue-green algae") + 
-  xlab("Date") + theme_bw() + 
+  xlab("Date") + theme_classic() + 
   geom_point(aes(date,y_adj), col="red",alpha=0.5) + 
   geom_line(aes(date,pred_gam), col="blue",alpha=0.5)
 
@@ -467,12 +466,10 @@ gam_smooth<-ggplot(df_smooth, aes(date, est, col=type, fill=type)) +
   geom_line(aes(date,est-2*se), alpha=0.5, linetype=2) + 
   geom_line(aes(date,est+2*se), alpha=0.5, linetype=2) + 
   geom_line(aes(date,est), alpha=0.5) + 
-  theme_bw() + 
+  theme_classic() + 
   xlab("Date") + 
   ylab("Phosphorous effect on blue-green algae (Slope)") 
 ```
-
-
 
 ```{r, include=FALSE}
 gam_cr30 <- gam(y_adj ~ s(n_date, by = lagged_zp, bs = "cr",
@@ -511,11 +508,9 @@ gamknots <- ggplot(df_smooth, aes(date, est, col=knots, fill=knots)) +
   geom_line(aes(date,est-2*se), alpha=0.5, linetype=2) + 
   geom_line(aes(date,est+2*se), alpha=0.5, linetype=2) + 
   geom_line(aes(date,est), alpha=0.5) + 
-  theme_bw() + xlab("Date") + ylab("Phosphorous effect on blue-green algae (slope)") 
+  theme_classic() + xlab("Date") + ylab("Phosphorous effect on blue-green algae (slope)") 
 
 ```
-
-
 
 ```{r, include=FALSE}
 
@@ -523,7 +518,7 @@ gamknots <- ggplot(df_smooth, aes(date, est, col=knots, fill=knots)) +
 # 
 # panel.a <- ggplot(d_all, aes(date, y_adj, col = smooth)) + 
 #   geom_point(col="grey") + 
-#   theme_bw() + 
+#   theme_classic() + 
 #   xlab("Year")+
 #     geom_ribbon(aes(ymin = pred-2*se, ymax = pred+2*se, y = NULL, fill=smooth),
 #               alpha = 0.15, colour = NA)+
@@ -543,7 +538,7 @@ gamknots <- ggplot(df_smooth, aes(date, est, col=knots, fill=knots)) +
 #   scale_colour_manual(values=c(col[4],col[5],col[3],col[1]))+
 #   scale_fill_manual(values=c(col[4],col[5],col[3],col[1]))+ 
 #   #ggtitle("Effect of smoothing DF on SEs")+
-#   theme_bw() + xlab("") + ylab("Phosphorous effect on blue-green algae \n (Time-varying slope)") 
+#   theme_classic() + xlab("") + ylab("Phosphorous effect on blue-green algae \n (Time-varying slope)") 
 # 
 # panel.c<-ggplot(df_smooth_type, aes(date, est, col=type)) + 
 #        geom_ribbon(aes(ymin = est-2*se, ymax = est+2*se, y = NULL, fill=type),
@@ -555,7 +550,7 @@ gamknots <- ggplot(df_smooth, aes(date, est, col=knots, fill=knots)) +
 #   scale_fill_manual(values=c(col[5],col[4],col[3],col[1]))+ 
 #   #ggtitle("Effect of choice of GAM smooth")+
 #   #ylim(c(-17,21))+
-#   theme_bw() + xlab("") + ylab("") 
+#   theme_classic() + xlab("") + ylab("") 
 # 
 # bottom_panel <-ggarrange(panel.b, panel.c,widths=c(1.05,1), nrow=1,labels=c("B.", "C."))
 # bottom_panel<-annotate_figure(bottom_panel, bottom = text_grob("Date"))
@@ -567,10 +562,7 @@ gamknots <- ggplot(df_smooth, aes(date, est, col=knots, fill=knots)) +
 # ggsave(figure2, filename = "Figure_S2_GAMtypes.png",bg="white", height = 8, width=8.5)
 ```
 
-
-
 ## Figures
-
 
 ::: {#suppfig-TSphos}
 ```{r}
@@ -594,7 +586,6 @@ print(tsbg)
 Time series of bluegreen algae (cyanobacteria) abundance in Lake Washington
 :::
 
-
 ::: {#suppfig-CCF}
 ```{r}
 #| echo: false
@@ -606,7 +597,6 @@ ccf(dat$y_adj, dat$zp, main="CCF")
 A CCF (Cross-Correlation Function) plot that represents the correlation between total phosphorus and blugreen algae abundance as a function of the lag (time difference) between them.
 :::
 
-
 ::: {#suppfig-dlmSlope}
 ```{r}
 #| echo: false
@@ -617,7 +607,6 @@ DLM_plot
 
 Time-varying slope of the relationship between bluegreen algae (response) and total phosphorus (driver) from a DLM
 :::
-
 
 ::: {#suppfig-dlmFit}
 ```{r}
@@ -652,7 +641,6 @@ dlm_qq
 Q-Q plot from the DLM model fit with a time-varying slope between blue-green algae and phosphorus
 :::
 
-
 ::: {#suppfig-gamFit}
 ```{r, echo=FALSE}
 pA
@@ -660,8 +648,6 @@ pA
 
 Fit of the GAM models (lines) to observed bluegreen algae (cyanobacteria) abundance (black points). Colors denote different specifications of the smoother functions.
 :::
-
-
 
 ::: {#suppfig-gamresid}
 ```{r}
@@ -692,7 +678,6 @@ gam_smooth
 
 Effect of the choice of smoother function on estimates of time-varying slope parameter where color denotes model type. 3 GAM smoother types (cr, tp, gp) are contrasted with a DLM (dlm).
 :::
-
 
 ::: {#suppfig-gamknots}
 ```{r, echo=FALSE}
