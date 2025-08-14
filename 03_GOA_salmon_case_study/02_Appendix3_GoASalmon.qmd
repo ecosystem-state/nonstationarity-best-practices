@@ -37,13 +37,16 @@ library(tidyverse)
 library(strucchange)
 library(data.table)
 library(DHARMa)
+library(modelr)
+library(forecastHybrid)
+library(ggpubr)
 ```
 
 Here we show the LM, GAM, and DLM analysis for the Gulf of Alaska salmon dataset. For complete code, see the [full quarto document](https://github.com/ecosystem-state/nonstationarity-best-practices/blob/main/GOA_salmon_case_study/Appendix3_GoASalmon.qmd)
 
 ## Data Processing
 
-First, we standardize and examine the trends in SST and salmon abundace from Litzow et al. 2018 updated with data through 2025 (@suppfig-TSsalmon & @suppfig-TSsst). 
+First, we standardize and examine the trends in SST and salmon abundace from Litzow et al. 2018 updated with data through 2025 (@suppfig-TSsalmon & @suppfig-TSsst).
 
 ```{r, echo=FALSE}
 # Load salmon timeseries collapsed into DFA trend
@@ -79,13 +82,11 @@ dat %>%
   na.omit() -> dat2
 ```
 
-
-
 ## LM
 
-We start our investigation using linear models, to evaluate the relationship between salmon catch and SST anomalies  with periods defined **a-priori** as before and after 1988/1989 (from Litzow et al. 2018). Previous investigations used this approach, and while we primarily discuss DLMs and GAMs for this dataset in the main text, we include this illustrative example here for completeness and comparability to the previous study. 
+We start our investigation using linear models, to evaluate the relationship between salmon catch and SST anomalies with periods defined *a-priori* as before and after 1988/1989 (from Litzow et al. 2018). Previous investigations used this approach, and while we primarily discuss DLMs and GAMs for this dataset in the main text, we include this illustrative example here for completeness and comparability to the previous study.
 
-We compare linear model structures using classic model selection criteria, AIC. First, we examine a 1) intercept only model, 2) salmon abundance with period as a predictor, 3) salmon abundance with period and SST anomalies as predictors, and 4) an interaction between SST anomalies and period. This shows that model 2 is a better fit to the data than model one illustrating that a time-varying intercept is an improvement to model fit than a time-invariant intercept. Similarly, model 4 is the best model showing that a time-varying slope with SST is an improvement to a time-invariant slope (@supptab-AIC).
+We compare linear model structures using classic model selection criteria, AIC. First, we examine a 1) intercept only model, 2) salmon abundance with period as a predictor, 3) salmon abundance with period and SST anomalies as predictors, and 4) an interaction between SST anomalies and period. This shows that model 2 is a better fit to the data than model 1 indicating that a time-varying intercept is an improvement to model fit than a time-invariant intercept. Similarly, model 4 is the best model showing that a time-varying slope with SST is an improvement to a time-invariant slope (@supptab-AIC).
 
 ```{r, echo=FALSE}
 dat2 %>%
@@ -141,11 +142,11 @@ TS_slm<- ggplot()+
 
 ```
 
-
-
 ## GAM
 
-Next, we consider generalized additive models. We fit two distinct GAM models to the salmon catch data and SST anomalies to illustrate the differences in a model with a time-varying slope and a time-varying intercept, and a model that only has a time-varying slope. We find that when fitting a time-varying slope and time-varying intercept model, most of the variability in the relationship is explained by the time-varying intercept (@suppfig-tvintgam) while the time-varying slope does not change much through time (@suppfig-tvslopegam). When only a time-varying slope is fit to the data, the slope parameter is much more variable through time (@suppfig-tvslopegam), and looks similar to the slope estimated by the linear models (@suppfig-fitslm). 
+Next, we consider generalized additive models. We fit two distinct GAM models to the salmon catch data and SST anomalies to illustrate the differences in a model with a time-varying slope and a time-varying intercept. We find that when fitting a time-varying slope and time-varying intercept model, most of the variability in the relationship is explained by the time-varying intercept (@suppfig-tvintgam) while the time-varying slope does not change much through time (@suppfig-tvslopegam). When only a time-varying slope is fit to the data, the slope parameter is much more variable through time (@suppfig-tvslopegam), and looks similar to the slope estimated by the linear models (@suppfig-fitslm).
+
+Next, we check the residuals plots for both parameterizations of the models. The time-varying slope model appears to have some residual temporally variability while there are no trends through time in the model with both a time-varying slope and a time-varying intercept (@suppfig-gamresid) and the qq-pot looks reasonable for both (@suppfig-gamqq).
 
 ```{r,include=FALSE}
 dat_aksalmon <- readRDS("../03_GOA_salmon_case_study/data_for_AK_salmon_example.rds")
@@ -155,12 +156,13 @@ dat_aksalmon <- dplyr::rename(dat_aksalmon,
                               response = salmon_DFA,
                               driver = z_sst, 
                               date = year)
-K_AK <- 20#round(0.99*nrow(dat_aksalmon))
+K_AK <- 9#round(0.99*nrow(dat_aksalmon))
 dat_aksalmon$n_date <- seq(1,nrow(dat_aksalmon))
+
 gam_aksalmon_1 <- gam(response ~ s(n_date,k=K_AK) + s(n_date, by = driver, bs = "gp",k=K_AK), data = dat_aksalmon)
 gam_aksalmon_2 <- gam(response ~ s(n_date, by = driver, bs = "gp",k=K_AK), data = dat_aksalmon)
-
 gam_aksalmon_3 <-  gam(response ~ s(driver, bs = "gp",k=K_AK), data = dat_aksalmon)
+
 # extract the smooth estimates with SEs to compare to DLM
 plot_3 <- plot(gam_aksalmon_1, seWithMean = TRUE, n = nrow(dat_aksalmon))
 plot_4 <- plot(gam_aksalmon_2, seWithMean = TRUE, n = nrow(dat_aksalmon))
@@ -236,9 +238,9 @@ resid_df3 <- data.frame(resid = resid(gam_aksalmon_3),
 resids <- rbind(resid_df1, resid_df2)#,resid_df3)
 gamresid <- ggplot(resids, aes(date, resid)) + 
   geom_point() + 
-  geom_smooth() + 
+  geom_smooth(method = 'gam',formula = y ~ s(x)) + 
   theme_classic() + xlab("Date") + ylab("Residuals") + 
-  facet_wrap(~ Model, ncol=3) + ggtitle("GAM Residuals")
+  facet_wrap(~ Model, nrow=2) + ggtitle("GAM Residuals")
 ```
 
 ```{r echo = FALSE}
@@ -254,8 +256,149 @@ gamquant<-ggplot(resids, aes(sample = resid)) + stat_qq() + stat_qq_line() + lab
 #plotResiduals(simulationOutput, dat_aksalmon$driver)
 ```
 
+```{r echo = FALSE}
+#k-fold cross validation
+cv_dat<-dat_aksalmon%>%
+  mutate(id = row_number())
+
+train_df = slice_sample(cv_dat,n=25) #size = 0.5)
+test_df = anti_join(cv_dat, train_df, by = "id")
+
+folds_plot<-ggplot(train_df, aes(x = date, y = response)) + 
+  geom_point(aes(color="Train Data")) + 
+  geom_point(data = test_df, aes(color="Test Data"))+
+    scale_color_manual(values=c( "red","black"))+
+  theme_classic()
+
+Timevarying_Intercept_and_Slope <- gam(response ~ s(n_date,k=K_AK) + s(n_date, by = driver, bs = "gp",k=K_AK), data = train_df)
+Timevarying_Slope <- gam(response ~ s(n_date, by = driver, bs = "gp",k=K_AK), data = train_df)
+Not_Timevarying <-  gam(response ~ s(driver, bs = "gp",k=K_AK), data = train_df)
 
 
+foldsbymodelplot<-train_df |> 
+  gather_predictions(Timevarying_Intercept_and_Slope,
+                     Timevarying_Slope) |>
+                     #Not_Timevarying) |> 
+  mutate(model = fct_inorder(model)) |> 
+  ggplot(aes(x = date, y = response)) + 
+  geom_point() + 
+  geom_line(aes(y = pred), color="red") + 
+     # scale_color_manual(values=c("black","red"))+
+  #geom_point(data = test_df, color = "red")+
+  facet_wrap(~model)+
+  theme_classic()
+```
+
+We need to decide if there is enough ecological evidence to support a model with both a time-varying slope and time-varying intercept and whether that model has signs of overfitting. We can do this by using cross validation and comparing the root mean square error (RMSE) of a set of training data compared to test data. For time series data its important that cross validation methods retain the temporal structure of the data. To do this, we used approximate leave-future out cross validation (LFO-CV) where we fit the model to 15 years of data (training data, first year to year n-1) and predict 1 year ahead (test data, year n). The model is used to produce in-sample predictions for the training data and one-year-ahead out of sample predictions for the test data. Then the model is iteratively refit walking one year ahead such that the training data then includes n and the test data is n+1. RMSE is then calculated for both the training and the test datasets based on predictions for each iteration. If RMSE of the training data is significantly lower than RMSE of the test data, it indicates the model is likely overfitting. 
+
+We compared LFO-CV for the training and test data for both candidate models: time-varying slope and intercept, and time-varying slope only (@suppfig-lfofold). For the time-varying slope and intercept model, the RMSE of the training data was significantly lower (p < 0.05) than the RMSE of the test data (@supptab-rmse). The RMSE of the training data was lower than the RMSE for the test data for the time-varying slope model, but they were not significantly different (p > 0.05). Collectively with the residual diagnostics, we conclude that the time-varying slope model is appropriate for interpreting ecological dynamics and performs better than the model that also included a time-varying intercept (based on evidence of overfitting with this model parameterization). However, if the goal of fitting this model was prediction, it would be valuable to address the residual temporal variability that is not explained by SST and the time-varying slope. Additional predictors and considering additional extrinsic factors that may contribute to the time-varying salmon catch - SST relationship would be the next step.
+
+```{r echo = FALSE, include=FALSE}
+train_df_pred_TIS<-train_df |> 
+  gather_predictions(Timevarying_Intercept_and_Slope) 
+  train_kfold_tis<-sqrt(sum((train_df_pred_TIS$pred-train_df_pred_TIS$response)^2)/nrow(train_df_pred_TIS))
+
+train_df_pred_TS<-train_df |> 
+  gather_predictions(Timevarying_Slope) 
+  train_kfold_ts<-sqrt(sum((train_df_pred_TS$pred-train_df_pred_TS$response)^2)/nrow(train_df_pred_TS))
+    
+test_df_pred_TIS<-test_df |> 
+  gather_predictions(Timevarying_Intercept_and_Slope) 
+  test_kfold_tis<-sqrt(sum((test_df_pred_TIS$pred-test_df_pred_TIS$response)^2)/nrow(test_df_pred_TIS))
+
+test_df_pred_TS<-test_df |> 
+  gather_predictions(Timevarying_Slope) 
+  test_kfold_ts<-sqrt(sum((test_df_pred_TS$pred-test_df_pred_TS$response)^2)/nrow(test_df_pred_TS))
+    
+```
+
+```{r echo = FALSE, include=FALSE}
+dat<-dat_aksalmon
+pred<- data.frame()
+min_years <- 9
+full_length <-nrow(dat)
+jstart<- 1
+K_AK<-8
+
+for (j in (jstart-1):(full_length-min_years-1)) {
+    train_index <- (jstart):(min_years+j)# All indices except the j-th
+    test_index <- min_years+j+1                # The j-th index
+    train_data<-dat[which(dat$date %in% unique(dat$date)[train_index]), ]
+    
+    # Fitting the 3 models
+    gam_model_1 <- gam(response  ~ s(n_date,k=K_AK) + s(n_date, by = driver, bs = "gp",k=K_AK),data=train_data )
+    gam_model_2 <- gam(response ~ s(n_date, by = driver, bs = "gp",k=K_AK), data  = train_data)
+    gam_model_3 <-gam(response ~ s(driver, bs = "gp",k=K_AK), data  = train_data)
+    
+    #RMSE for training data for each model
+    rmse_train1<- sqrt(sum((predict(gam_model_1)-train_data$response)^2)/nrow(train_data))
+    rmse_train2<- sqrt(sum((predict(gam_model_2)-train_data$response)^2)/nrow(train_data))
+    rmse_train3<- sqrt(sum((predict(gam_model_3)-train_data$response)^2)/nrow(train_data))
+
+    
+    newdata<-dat[which(dat$date %in% unique(dat$date)[test_index]), ]
+    gam1_pred=predict(gam_model_1, newdata = newdata)
+    gam2_pred=predict(gam_model_2, newdata = newdata)
+    gam3_pred=predict(gam_model_3, newdata = newdata)
+    rmse_test1=sqrt(sum((gam1_pred-newdata$response)^2)/nrow(newdata))
+    rmse_test2=sqrt(sum((gam2_pred-newdata$response)^2)/nrow(newdata))
+    rmse_test3=sqrt(sum((gam3_pred-newdata$response)^2)/nrow(newdata))
+    results=cbind(rmse_train1, rmse_test1,gam1_pred,
+                             rmse_train2, rmse_test2,gam2_pred,
+                             rmse_train3, rmse_test3,gam3_pred,
+                             date=newdata$date)
+    # Predict the excluded observation
+    pred <- rbind(pred,results)
+  }
+
+train_dat_pred<-left_join(dat,pred)
+rmse_pred<-apply(pred, 2, mean)
+t.test(pred$rmse_train1,pred$rmse_test1)     
+t.test(pred$rmse_train2,pred$rmse_test2)     
+
+```
+
+```{r echo = FALSE}
+tvintsl_lfo<-  ggplot(data=train_dat_pred,aes(x = date, y = response)) + 
+  geom_point() + 
+    ylim(c(-6,8))+
+  ggtitle("Time-varying slope and intercept")+
+  geom_line(aes(y = gam1_pred), color = "red") + 
+ # facet_wrap(~model)+
+  theme_classic()
+  
+tvsl_lfo<-  ggplot(data=train_dat_pred,aes(x = date, y = response)) + 
+  geom_point() + 
+    ylim(c(-6,8))+
+    ggtitle("Time-varying slope")+
+  geom_line(aes(y = gam2_pred), color = "red") + 
+ # facet_wrap(~model)+
+  theme_classic()
+    
+sl_lfo<-  ggplot(data=train_dat_pred,aes(x = date, y = response)) + 
+  geom_point() + 
+  ylim(c(-6,8))+
+      ggtitle("Time-invariant slope")+
+  geom_line(aes(y = gam3_pred), color = "red") + 
+ # facet_wrap(~model)+
+  theme_classic()
+
+```
+
+
+```{r echo = FALSE}
+#RMSE tables
+names<- c("leave-future-out train", "leave-future-out test")
+models <- c("Time-varying slope & intercept", "Time-varying slope")
+row1<- c(rmse_pred[1],rmse_pred[2])
+row2<- c(rmse_pred[4],rmse_pred[5])
+cv<-data.frame(rbind(round(row1,2),round(row2,2)))
+rownames(cv)=models
+colnames(cv)=names
+```
+\break
+
+## DLM
 
 ```{r,include=FALSE}
 
@@ -345,11 +488,7 @@ int_panel <- ggplot(coefs, aes(date, int_est, group = time_varying, fill=time_va
 
 ```
 
-\break
-
-## DLM
-
-We fit two distinct DLM models to the salmon catch data and SST anomalies to compare to the results of the GAM models. Generally, the parameters estimated by the DLM are more certain and follow similar patterns through time as the GAM (@suppfig-tvint & @suppfig-tvslope). There is also more interannual variability in the parameter estimates of the DLM compared to the continuously smoothed pattern of the GAM. 
+We fit two distinct DLM models to the salmon catch data and SST anomalies to compare to the results of the GAM models. Generally, the parameters estimated by the DLM are more certain and follow similar patterns through time as the GAM (@suppfig-tvint & @suppfig-tvslope). There is also more interannual variability in the parameter estimates of the DLM compared to the continuously smoothed pattern of the GAM. We also find similar residual patterns for the DLM compared to the GAM (@suppfig-dlmresid & @suppfig-dlmqq).
 
 ```{r echo=FALSE}
 pred <- predict(dlm_aksalmon_1)$pred
@@ -362,43 +501,30 @@ resid_df2 <- data.frame(resid = pred2$y - pred2$estimate,
                        date = dat_aksalmon$date,
                        Model = "Slope")
 resids <- rbind(resid_df1, resid_df2)
-ggplot(resids, aes(date, resid)) + 
+dlm_resids<-ggplot(resids, aes(date, resid)) + 
   geom_point() + 
-  geom_smooth() + 
+  ylim(c(-2,4))+
+  geom_smooth(method = 'gam',formula = y ~ s(x)) + 
   theme_classic() + xlab("Date") + ylab("Residuals") + 
-  facet_wrap(~ Model, ncol=2, scale="free_y") + ggtitle("DLM Residuals")
+  facet_wrap(~ Model, nrow=2, scale="free_y") + ggtitle("DLM Residuals")
 ```
 
 ```{r echo = FALSE}
-ggplot(resids, aes(sample = resid)) + stat_qq() + stat_qq_line() + labs(
+dlm_qq<-ggplot(resids, aes(sample = resid)) + stat_qq() + stat_qq_line() + labs(
     x = "Theoretical Quantiles",
     y = "Sample Quantiles"
   ) + theme_classic() + facet_wrap(~ Model,scale="free_y") + ggtitle("DLM Residuals")
 ```
 
-
-::: {#suppfig-tvint}
-```{r, echo=FALSE}
-int_panel
-```
-Time-varying intercept of the DLM model representing the relationship between SST anomalies and salmon catch. 
-:::
-
-::: {#suppfig-tvslope}
-```{r, echo=FALSE}
-slope_panel
-```
-Time-varying slope of the DLM model representing the relationship between SST anomalies and salmon catch. 
-:::
-
 {{< pagebreak >}}
 
-## Figures 
+## Figures and Tables
 
 ::: {#suppfig-TSsalmon}
 ```{r, echo=FALSE}
 salmon_DFA
 ```
+
 Time series of salmon catch from Lizow et al. 2018
 :::
 
@@ -406,6 +532,7 @@ Time series of salmon catch from Lizow et al. 2018
 ```{r, echo=FALSE}
 SST_TS
 ```
+
 Time series of sea surface temperature anomalies from Lizow et al. 2018
 :::
 
@@ -414,6 +541,7 @@ Time series of sea surface temperature anomalies from Lizow et al. 2018
 
 TS_slm
 ```
+
 Time series of scaled salmon catch trend (salmon color) and SST anomalies (dark blue)
 :::
 
@@ -421,6 +549,7 @@ Time series of scaled salmon catch trend (salmon color) and SST anomalies (dark 
 ```{r, echo=FALSE}
 Fit_slm
 ```
+
 The relationship between salmon catch and SST anomalies before and after the 1988/1989 time periods
 :::
 
@@ -428,50 +557,111 @@ The relationship between salmon catch and SST anomalies before and after the 198
 ```{r, echo=FALSE}
 int_panel_gam
 ```
-Time-varying intercept of the GAM model representing the relationship between SST anomalies and salmon catch. 
-:::
 
+Time-varying intercept of the GAM model representing the relationship between SST anomalies and salmon catch.
+:::
 
 ::: {#suppfig-tvslopegam}
 ```{r, echo=FALSE}
 slope_panel_gam
 ```
-Time-varying slope of the GAM model representing the relationship between SST anomalies and salmon catch. 
+
+Time-varying slope of the GAM model representing the relationship between SST anomalies and salmon catch.
 :::
 
 ::: {#suppfig-gamresid}
 ```{r, echo=FALSE}
 gamresid
 ```
-Time series of residuals from the GAM model fit with a time-varying slope and both a time-varying slope and intercept. 
+
+Time series of residuals from the GAM model fit with a time-varying slope and both a time-varying slope and intercept.
+:::
+
+::: {#suppfig-gamqq}
+```{r, echo=FALSE}
+gamquant
+```
+
+QQ plot from the GAM model fit with a time-varying slope and both a time-varying slope and intercept.
 :::
 
 
+::: {#suppfig-lfofold}
+```{r, echo=FALSE}
+#| fig-width: 6
+#| fig-height: 7
+ggarrange(tvintsl_lfo,tvsl_lfo,nrow=2,ncol=1,labels=c("A.","B."))
+
+```
+
+Leave-future-out cross validation for the GAM models fit with (A.) both a time-varying slope and intercept, (B.) a time-varying slope and and (C.).
+:::
+
+::: {#suppfig-tvint}
+```{r, echo=FALSE}
+int_panel
+```
+
+Time-varying intercept of the DLM model representing the relationship between SST anomalies and salmon catch.
+:::
+
+::: {#suppfig-tvslope}
+```{r, echo=FALSE}
+slope_panel
+```
+
+Time-varying slope of the DLM model representing the relationship between SST anomalies and salmon catch.
+:::
+
+::: {#suppfig-dlmresid}
+```{r, echo=FALSE}
+dlm_resids
+```
+
+Time series of residuals from the DLM model fit with a time-varying slope and both a time-varying slope and intercept.
+:::
+
+::: {#suppfig-dlmqq}
+```{r, echo=FALSE}
+dlm_qq
+```
+
+QQ plot from the DLM model fit with a time-varying slope and both a time-varying slope and intercept.
+:::
+
 {{< pagebreak >}}
 
-## Tables
-
 ::: {#supptab-AIC}
+```{r, echo=FALSE}
+knitr::kable(head(AIC_tab))
+```
+
+AIC values for four linear models
+:::
+
+<div>
 
 ```{r, echo=FALSE}
 knitr::kable(head(AIC_tab))
 ```
+
 AIC values for four linear models
-::: 
 
-
-::: {#supptab-AIC}
-
-```{r, echo=FALSE}
-knitr::kable(head(AIC_tab))
-```
-AIC values for four linear models
-::: 
+</div>
 
 ::: {#supptab-results}
 ```{r, echo=FALSE}
 
   knitr::kable(mod.results)
 ```
+
 Summary of the output of the best supported model (model 4)
+:::
+
+::: {#supptab-rmse}
+```{r, echo=FALSE}
+  knitr::kable(cv)
+```
+
+RMSE for LFO-CV for both test and training datasets for the time-varying slope and intercept, and the time-varying slope models.
 :::
