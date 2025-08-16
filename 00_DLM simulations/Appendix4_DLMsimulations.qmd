@@ -20,7 +20,7 @@ crossref:
 
 ## Overview
 
-The simulation code for this comparison is in [simulations.R](https://github.com/ecosystem-state/nonstationarity-best-practices/blob/main/DLM%20simulations/simulations.R). Complete code for this file can be found [here](https://github.com/ecosystem-state/nonstationarity-best-practices/blob/main/DLM%20simulations/Appendix4_DLMsimulations.qmd). As a brief overview, we are interested in understanding what factors contribute to models with time-varying slopes not performing well - specifically, we found with the GoA salmon dataset that fitting both a time-varying slope and a time-varying intercept had convergence issues. All of these models are constructed using the `MARSS` R package, and we are only considering models with time-varying intercepts and slopes here.
+The simulation code for this comparison is in [simulations.R](https://github.com/ecosystem-state/nonstationarity-best-practices/blob/main/DLM%20simulations/simulations.R). Complete code for this file can be found [here](https://github.com/ecosystem-state/nonstationarity-best-practices/blob/main/DLM%20simulations/Appendix4_DLMsimulations.qmd). As a brief overview, we are interested in understanding what factors of a DLM contribute to models with time-varying slopes not performing well - specifically, we found with the GoA salmon dataset that fitting both a time-varying slope and a time-varying intercept had convergence issues. All of these models are constructed using the `MARSS` R package, and we are only considering models with time-varying intercepts and slopes here.
 
 #### Parameters
 

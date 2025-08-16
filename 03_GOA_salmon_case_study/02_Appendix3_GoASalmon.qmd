@@ -355,7 +355,7 @@ train_dat_pred<-left_join(dat,pred)
 rmse_pred<-apply(pred, 2, mean)
 t.test(pred$rmse_train1,pred$rmse_test1)     
 t.test(pred$rmse_train2,pred$rmse_test2)     
-
+t.test(pred$rmse_train3,pred$rmse_test3)    
 ```
 
 ```{r echo = FALSE}
@@ -636,18 +636,9 @@ QQ plot from the DLM model fit with a time-varying slope and both a time-varying
 knitr::kable(head(AIC_tab))
 ```
 
-AIC values for four linear models
+AIC values for five linear models
 :::
 
-<div>
-
-```{r, echo=FALSE}
-knitr::kable(head(AIC_tab))
-```
-
-AIC values for four linear models
-
-</div>
 
 ::: {#supptab-results}
 ```{r, echo=FALSE}

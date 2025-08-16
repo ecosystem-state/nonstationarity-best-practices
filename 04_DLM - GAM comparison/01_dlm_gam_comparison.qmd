@@ -402,12 +402,10 @@ Fig_4 <-ggarrange(fig_slope_y, fig_int_y,ncol=2,widths=c(1,1.25))
 annotate_figure(Fig_4, bottom = textGrob("Year", gp = gpar(cex = 1)))
 
 
-ggsave("Figure_4_dlmgam_comparison.png", height = 5, width = 11, bg = "white")
 
 
 
 ```
-
 
 ```{r}
 coefs<-coefs%>%mutate(year=as.numeric(format(date, "%Y")))
@@ -436,7 +434,7 @@ panel_a<-ggplot(coefs%>%filter(dataset=="Alaska salmon : DLM"), aes(x=year, y=in
   geom_text(data=annotateGoA, aes(x = date, y = y, 
                                   label = label),  
             col='black',fontface = "italic",cex=2.6)+
-  geom_hline(yintercept=0)+
+  geom_hline(yintercept=0, lty=3,col=col[5])+
 
   guides(fill="none",colour="none",lty="none")+
   scale_fill_manual(values=c(col[4],col[5]))+
@@ -651,7 +649,7 @@ ggarrange(fig_left,fig_right, nrow=1,ncol=2)%>%
   annotate_figure(bottom = textGrob("Year",gp = gpar(cex =1)))%>%
   ggarrange(legend, nrow=2,ncol=1, heights=c(10,1))
 
-ggsave("Figure_4_dlmgam_comparison.png", height = 5, width = 10, bg = "white")
+ggsave("Figure_4_dlmgam_comparison.png", height = 5, width = 11, bg = "white")
 
 
 ```
