@@ -9,12 +9,16 @@ library(paletteer)
 library(ggpubr)
 #set.seed(1035)
 col<-paletteer_d("nationalparkcolors::Everglades")
+paletteer_d("nationalparkcolors::Everglades")
 col2<-col[2:4]
-col3<-col2
-col<-c("#742d75","#373463", "#1e8181", "#62975e","#9c7a39","#682e44")
-col2<-col[1:3]
-col3<-col[4:6]
+#col3<-col2
+#col<-c("#742d75","#373463", "#1e8181", "#62975e","#9c7a39","#682e44")
+#col2<-col[1:3]
+
+#col3<-col[4:6]
 set.seed(9452)
+
+col3<-col2
 # defining the mean and varince of the different parameter distributions
 sds=c(0.1,0.1,0.35)
 means= c(0.2,-0.15,-0.15)
@@ -100,7 +104,8 @@ cplot<-ggplot(data=simulated_results) +
   ylab("Response")+
   #geom_ribbon(aes(y=mean,ymax=ymax,ymin=ymin))
   theme_classic()+
- # ylim(c(-1,1))+
+  ylim(c(-1.25,1.25))+
+  xlim(c(-1,1))+
   theme(plot.title = element_text(hjust = 0.5))+ 
   theme(legend.position="none")
 cplot
@@ -114,11 +119,13 @@ dplot<-ggplot(data=simulated_results) +
   scale_fill_manual(values=col2,labels = c("1950 - 1963", "1964 - 1984", "1985 - 2011"))+
   ggtitle("Time-Varying Intercept")+
   xlab("Driver")+
-  ylab("")+
- xlim(c(-1,1))+
+  ylab("")+  
+  ylim(c(-1.25,1.25))+
+  xlim(c(-1.25,1.25))+
   theme_classic()+
   theme(plot.title = element_text(hjust = 0.5))+ 
   theme(legend.position="none")
+
 dplot
 
 eplot<-ggplot(data=simulated_results) +
@@ -132,7 +139,8 @@ eplot<-ggplot(data=simulated_results) +
   ylab("")+
   ggtitle("Time-Varying Slope & Intercept")+
   theme_classic()+ 
- # ylim(c(-1,1))+
+  ylim(c(-1.25,1.25))+
+  xlim(c(-1.25,1.25))+
  # theme(legend.position="none")+
   theme(plot.title = element_text(hjust = 0.5))
 eplot
@@ -159,7 +167,7 @@ param=data.frame(sim=arima.sim(n = 1000,list(ar=.5),rand.gen = rnorm,
                     sd = 0.1833333, mean=-0.03333333))
 
  gplot<-ggplot(data=simulated, aes(x=sim)) +
-  geom_density(alpha=0.8,aes(group=period2,fill=period2))+
+ # geom_density(alpha=0.8,aes(group=period2,fill=period2))+
   geom_density(data=param,alpha=0.8, lwd=1, lty=2)+
   xlim(c(-1,1))+
   scale_fill_manual(values=col3,labels = c("1950 - 1963", "1964 - 1984", "1985 - 2011"))+

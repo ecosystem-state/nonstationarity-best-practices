@@ -18,6 +18,8 @@ crossref:
       latex-list-of-description: Supplementary Table
 ---
 
+# Appendix 3: Gulf of Alaska salmon analysis
+
 ```{r setup, include = FALSE}
 
 knitr::opts_chunk$set(

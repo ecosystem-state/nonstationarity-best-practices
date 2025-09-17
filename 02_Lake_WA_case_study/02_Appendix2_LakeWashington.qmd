@@ -12,6 +12,8 @@ crossref:
       latex-list-of-description: Supplementary Figure
 ---
 
+# Appendix 2: Lake Washington Analysis
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(
   warning = FALSE,  

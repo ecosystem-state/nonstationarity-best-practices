@@ -4,7 +4,11 @@ format: pdf
 editor: visual
 ---
 
+
+
 # Appendix 4: DLMs and GAMs for Lake Washington data
+
+
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(
@@ -30,7 +34,11 @@ col<-paletteer_d("nationalparkcolors::Everglades")
 
 ```
 
+
+
 ## Data
+
+
 
 ```{r}
 dat_lakewa <- readRDS("data_for_lakeWA_example.rds")
@@ -46,9 +54,13 @@ dat_aksalmon <- dplyr::rename(dat_aksalmon,
                               date = year)
 ```
 
+
+
 ## DLM with time-varying intercepts and time-varying slopes
 
 Define the model – this block is basically copied from the MARSS book (salmon survival case study). First for the Lake WA example:
+
+
 
 ```{r}
 dat <- dat_lakewa
@@ -81,7 +93,11 @@ dlm_lakewa_2 <- MARSS(dat_mat, inits = inits_list, model = mod_list,
                control = list(maxit=4000), method="TMB")
 ```
 
+
+
 Now for the AK salmon example
+
+
 
 ```{r}
 dat <- dat_aksalmon
@@ -114,7 +130,11 @@ dlm_aksalmon_2 <- MARSS(dat_mat, inits = inits_list, model = mod_list,
                control = list(maxit=4000), method="TMB")
 ```
 
+
+
 ## Time varying models with MGCV
+
+
 
 ```{r}
 K_WA <- round(0.99*nrow(dat_lakewa))
@@ -646,3 +666,4 @@ ggsave("Figure_4_dlmgam_comparison.png", height = 5, width = 11, bg = "white")
 
 
 ```
+

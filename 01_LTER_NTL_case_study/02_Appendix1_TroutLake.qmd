@@ -18,6 +18,8 @@ crossref:
       latex-list-of-description: Supplementary Table
 ---
 
+# Appendix 1: Trout Lake
+
 ## Overview
 
 Here we show the LM, and GAM analysis for the Trout Lake dataset. For complete code, see the [full quarto document](https://github.com/ecosystem-state/nonstationarity-best-practices/blob/main/LTER_NTL_case_study/Appendix1_TroutLake.qmd)
@@ -156,7 +158,7 @@ Interaction<-data.frame(
 
 ```
 
-Both Chlorophyll and large zooplankton best explain water clarity with a time-varying relationship model, rather than a time-varying abundance model. We can look at the model residuals to see how they compare for a time-varying model versus a time-invariant model. Using the large zooplankton covariate as an example, we can see in the timeseries of residuals (@suppfig-lmresid) that there is a temporal trend, supporting a temporally structured model. We find the q-q plot is similar across the models (@suppfig-lmqq) and are mostly okay.
+Both chlorophyll and large zooplankton best explain water clarity with a time-varying relationship model, rather than a time-varying abundance model. We can look at the model residuals to see how they compare for a time-varying model versus a time-invariant model. Using the large zooplankton covariate as an example, we can see in the timeseries of residuals (@suppfig-lmresid) that there is a temporal trend, supporting a temporally structured model. We find the q-q plot is similar across the models (@suppfig-lmqq) and are mostly okay.
 
 ```{r}
 #| echo: false
@@ -255,7 +257,7 @@ We can see from these results that there was a weak relationship from 1980 - 200
 
 ## GAM
 
-If we take the Zooplankton-water quality relationship and fit a temporally structured gam and compare it to the linear model, we find similar results. Both predictions also acccurately identify 2006 as a breakpoint and a second break point in 2016, although the GAM indicates that the slope of this relationship is a continuously changing trend (@suppfig-slope) and the intercept more closely tracks abundance (@suppfig-int).
+If we take the Zooplankton-water quality relationship and fit a temporally structured GAM and compare it to the linear model, we find similar results. Both predictions also acccurately identify 2006 as a breakpoint and a second break point in 2016, although the GAM indicates that the slope of this relationship is a continuously changing trend (@suppfig-slope) and the intercept more closely tracks abundance (@suppfig-int).
 
 ```{r}
 #| echo: FALSE
@@ -693,7 +695,7 @@ gamfit
 Predicted values of water clarity (black line) compared to observed values (red points) using a time-varying relationship with zooplankton abundance.
 :::
 
-::: {#suppfig-lmresid}
+::: {#suppfig-gamresid}
 ```{r}
 #| echo: false
 #| warning: false
