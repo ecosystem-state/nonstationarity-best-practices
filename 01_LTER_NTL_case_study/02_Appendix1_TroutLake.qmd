@@ -7,13 +7,13 @@ crossref:
     - kind: float
       key: suppfig
       latex-env: suppfig
-      reference-prefix: Figure S
+      reference-prefix: Figure S1.
       space-before-numbering: false
       latex-list-of-description: Supplementary Figure
     - kind: float
       key: supptab
       latex-env: supptab
-      reference-prefix: Table S
+      reference-prefix: Table S1.
       space-before-numbering: false
       latex-list-of-description: Supplementary Table
 ---

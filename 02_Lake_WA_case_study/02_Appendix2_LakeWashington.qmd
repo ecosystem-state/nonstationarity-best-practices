@@ -7,7 +7,7 @@ crossref:
     - kind: float
       key: suppfig
       latex-env: suppfig
-      reference-prefix: Figure S
+      reference-prefix: Figure S2.
       space-before-numbering: false
       latex-list-of-description: Supplementary Figure
 ---
@@ -120,7 +120,7 @@ mod_list <- list(B = B, U = U, Q = Q, Z = Z, A = A, R = R)
 dat_mat <- matrix(dat$y_adj, nrow = 1)
 # fit the model -- crank up the maxit to ensure convergence
 dlm_1 <- MARSS(dat_mat, inits = inits_list, model = mod_list,
-control = list(maxit=4000), method="TMB")
+control = list(maxit=4000))
 
 
 

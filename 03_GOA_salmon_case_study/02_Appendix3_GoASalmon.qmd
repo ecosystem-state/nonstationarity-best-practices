@@ -7,13 +7,13 @@ crossref:
     - kind: float
       key: suppfig
       latex-env: suppfig
-      reference-prefix: Figure S
+      reference-prefix: Figure S3.
       space-before-numbering: false
       latex-list-of-description: Supplementary Figure
     - kind: float
       key: supptab
       latex-env: supptab
-      reference-prefix: Table S
+      reference-prefix: Table S3.
       space-before-numbering: false
       latex-list-of-description: Supplementary Table
 ---
@@ -426,13 +426,13 @@ mod_list <- list(B = B, U = U, Q = Q, Z = Z, A = A, R = R)
 dat_mat <- matrix(dat$response, nrow = 1)
 # fit the model -- crank up the maxit to ensure convergence
 dlm_aksalmon_1 <- MARSS(dat_mat, inits = inits_list, model = mod_list,
-               control = list(maxit=4000), method="TMB")
+               control = list(maxit=4000))
 
 # Fit a second model with just time-varying slope
 diag(Q)[1] <- 1e-10
 mod_list <- list(B = B, U = U, Q = Q, Z = Z, A = A, R = R)
-dlm_aksalmon_2 <- MARSS(dat_mat, inits = inits_list, model = mod_list,
-               control = list(maxit=4000), method="TMB")
+dlm_aksalmon_2 <-MARSS(dat_mat, inits = inits_list, model = mod_list,
+               control = list(maxit=4000))
 
 coef_dlm_AK1 <- data.frame(date = dat_aksalmon$date,
                         int_est = dlm_aksalmon_1$states[1,],
