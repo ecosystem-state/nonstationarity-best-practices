@@ -33,6 +33,7 @@ Approach for running LTER-NTL Trout Lake data using temporally structured GAMs a
 #| warning: false
 library(paletteer)
 library(ggpubr)
+library(MARSS)
 library(nord)
 library(ggplot2)
 library(dplyr)
@@ -50,6 +51,7 @@ library(mgcv)
 library(gratia)
 library(tidyr)
 library(data.table)
+library(DHARMa)
 col<-paletteer_d("nationalparkcolors::Everglades")
 full_data <- readRDS(here::here("01_LTER_NTL_case_study/NTL_LTER_TL_data.rds"))
 analysis_data<-full_data%>%
@@ -87,13 +89,20 @@ dataset_names <- list(
   'mean_chl_scale'="Chlorophyll",
   'Large_scale'="Large Zooplankton"
 )
+
+dataset_names <- c(
+  "Water Clarity",
+ "Total Phosphorus",
+  "Chlorophyll",
+  "Large Zooplankton"
+)
 facet_labeller <- function(variable,value){
   return(dataset_names[value])
 }
 ts <- ggplot(data=analysis_long%>%
          filter(Dataset=="mean_sec_scale"|Dataset=="mean_totpuf_scale"|
                  Dataset=="mean_chl_scale"| Dataset=="Large_scale"), aes(y=values, x=year4, group=Dataset, col=Dataset)) +
-  facet_wrap(~Dataset,nrow=2,labeller=facet_labeller) +
+  facet_wrap(~Dataset,nrow=2,labeller = as_labeller(dataset_names)) +
   geom_hline(yintercept=0)+
   geom_point()+
   geom_line()+
@@ -165,6 +174,8 @@ Both chlorophyll and large zooplankton best explain water clarity with a time-va
 #| include: false
 #| warning: false
 
+
+
 zoop<-lm(mean_sec~Large, data=full_data)
 
 resid_df <- data.frame(Model = "Time-Varying Large Zooplankton", 
@@ -173,11 +184,19 @@ resid_df <- data.frame(Model = "Time-Varying Large Zooplankton",
 resid_df2 <- data.frame(Model = "Time-Invariant Large Zooplankton", 
                        resid = resid(zoop),
                        year = full_data$year)
-resid <- rbind(resid_df, resid_df2)
+
+p_values<-data.frame(p_value=c(summary(gam(resid(zoop_slope_int)~s(full_data$year)))$s.pv,
+                     summary(gam(resid(zoop)~s(full_data$year)))$s.pv), 
+           Model=c("Time-Varying Large Zooplankton","Time-Invariant Large Zooplankton"))
+
+resid <- rbind(resid_df, resid_df2)%>%
+  left_join(p_values)
 lm_resid<-ggplot(resid, aes(year, resid)) + 
   geom_point() + 
-  geom_smooth() + 
+  geom_smooth(method = "gam", formula = y ~ s(x)) + theme_classic() + 
   facet_wrap(~Model) + 
+  geom_text(aes(x = 1990, y = 1, label =paste0("p = ",round(p_value,2))),
+  inherit.aes = FALSE)+
   theme_bw() + xlab("Year") + ylab("Residuals")
 ```
 
@@ -185,11 +204,16 @@ lm_resid<-ggplot(resid, aes(year, resid)) +
 #| echo: false
 #| include: false
 #| warning: false
-lm_qq<-ggplot(resid, aes(sample = resid)) + stat_qq() + stat_qq_line() + labs(
-    x = "Theoretical Quantiles",
-    y = "Sample Quantiles"
-  ) + theme_bw() + facet_wrap(~ Model)
-
+simulationOutputzoop <- simulateResiduals(fittedModel =zoop)
+qqzoop<- plotQQunif(simulationOutputzoop)
+simulationOutputzoop_slope_int <- simulateResiduals(fittedModel =zoop_slope_int)
+qqzoop_slope<-plotQQunif(simulationOutputzoop_slope_int)
+# 
+# lm_qq<-ggplot(resid, aes(sample = resid)) + stat_qq() + stat_qq_line() + labs(
+#     x = "Theoretical Quantiles",
+#     y = "Sample Quantiles"
+#   ) + theme_bw() + facet_wrap(~ Model)
+# 
 ```
 
 Next, we examine how these relationships change through time, with a focus on large zooplankton.
@@ -315,7 +339,7 @@ prediction2[36,]
 
 We can do similar residual diagnostics with the GAM model used. We can see that in a model that does not include a smooth by year term, there is a temporal trend in the residuals, but this is resolved when a smooth by year is implemented (@suppfig-gamresid). There doesn't appear to be issues with the QQ plots for any specification (@suppfig-gamqq).
 
-```{r echo = FALSE}
+```{r}
 #| echo: false
 #| include: false
 #| warning: false
@@ -334,19 +358,28 @@ resid_df3 <- data.frame(Model = "Smooth by Year",
                        resid = resid(gam5),
                        year = full_data$year,
                        zooplankton = full_data$Large)
-resid_df <- rbind(resid_df1, resid_df2, resid_df3)
+
+p_values<-data.frame(p_value=c(summary(gam(resid(gam1)~s(full_data$year)))$s.pv,
+                     summary(gam(resid(gam4)~s(full_data$year)))$s.pv,
+                     summary(gam(resid(gam5)~s(full_data$year)))$s.pv), 
+           Model=c("Time-Varying Zooplankton","Smooth by Zooplankton","Smooth by Year"))
+resid_df <- rbind(resid_df1, resid_df2, resid_df3)%>%
+  left_join(p_values)
 gam_resid<-ggplot(resid_df, aes(year, resid)) + 
   geom_point() + 
   geom_smooth() + 
   theme_bw() + 
   facet_wrap(~Model)+
+     geom_text(
+    aes(x = 1990, y = -1, label =paste0("p = ",round(p_value,4))),
+    inherit.aes = FALSE)+
   xlab("Year") + ylab("Residuals")
 ```
 
-```{r echo = FALSE}
+```{r}
 #| echo: false
-#| include: false
-#| warning: false
+#| include: FALSE
+#| warning: FALSE
 ggplot(resid_df, aes(scale(zooplankton), resid)) + 
   geom_point() + 
   geom_smooth() + 
@@ -355,14 +388,21 @@ ggplot(resid_df, aes(scale(zooplankton), resid)) +
   xlab("Zooplanktion") + ylab("Residuals")
 ```
 
-```{r echo = FALSE}
-#| echo: false
-#| include: false
-#| warning: false
-gam_qq<-ggplot(resid_df, aes(sample = resid)) + stat_qq() + stat_qq_line() + labs(
-    x = "Theoretical Quantiles",
-    y = "Sample Quantiles"
-  ) + theme_bw()+facet_wrap(~Model)
+```{r}
+#| echo: FALSE
+#| include: FALSE
+#| warning: FALSE
+simulationOutput4 <- simulateResiduals(fittedModel =gam4,main = "Smooth by Zooplankton")
+qq4<- plotQQunif(simulationOutput4)
+simulationOutput5 <- simulateResiduals(fittedModel =gam5)
+qq4<-plotQQunif(simulationOutput5)
+simulationOutput1 <- simulateResiduals(fittedModel =gam1)
+qq1<-plotQQunif(simulationOutput1)
+
+# gam_qq<-ggplot(resid_df, aes(sample = resid)) + stat_qq() + stat_qq_line() + labs(
+#     x = "Theoretical Quantiles",
+#     y = "Sample Quantiles"
+#   ) + theme_bw()+facet_wrap(~Model)
 
 ```
 
@@ -491,7 +531,11 @@ for(i in 1:length(window)){
                               Slope=summary(the_lm)$coefficients[2,1], 
                               last_year=first_year[j], 
                               first_year=first_year[j]-window[i],
-                              window=window[i])
+                              window=window[i], 
+                              P_intercept = summary(the_lm)$coefficients[1,4],
+                              P_slope = summary(the_lm)$coefficients[2,4],
+                              se_intercept = summary(the_lm)$coefficients[1,2],
+                              se_slope = summary(the_lm)$coefficients[2,2])
   
 important_variables <-rbind(important_variables_temp, important_variables)
  #rbind(slope_tibble, important_variables)  
@@ -500,33 +544,69 @@ results <- rbind(important_variables, results)
 }
 return(results)
 }
-window<-c(3,5,7,9,11,13,15)
+#window<-c(3,5,7,9,11,13,15)
+window<-c(3,7,11,15)
+
 results_window<-sf_fun_zoop(2023:1992,window)
+# ggplot(results_window, aes(x=last_year, y=as.factor(window), fill= Slope))+ 
+#   geom_tile()+
+#   xlab("")+
+#   ylab("")+
+#   scale_fill_gradient2(low = col[2],
+#                        mid = "#FFFFCC",
+#                        high = col[3], midpoint = 0)+
+#   geom_vline(xintercept = c(2006.5,2014.5), lty=2)+
+#   theme_classic()
+
+
+
+  # ggplot(results_window, aes(x=last_year, y=as.factor(window), fill= Intercept)) + 
+  # geom_tile()+
+  # xlab("")+
+  # ylab("Time Period Length (Years)")+
+  #     geom_vline(xintercept = c(2006.5,2014.5), lty=2)+
+  # 
+  # scale_fill_gradient2(low = col[2],
+  #                      mid = "#FFFFCC",
+  #                      high = col[3], midpoint = 5.25)+
+  #     theme_classic()
+
+results_window = results_window%>%
+  mutate(slope_significance = ifelse(P_slope >= 0.05, "","*"),
+         intercept_significance = ifelse(P_intercept >= 0.05, "","*"))
+
 panel_c <- ggplot(results_window, aes(x=last_year, y=as.factor(window), fill= Slope)) + 
   geom_tile()+
   xlab("")+
   ylab("")+
   scale_fill_gradient2(low = col[2],
                        mid = "#FFFFCC",
-                       high = col[3], midpoint = 0)+
-  geom_vline(xintercept = c(2006.5,2014.5), lty=2)+
-      theme_classic()
-panel_c 
-
-panel_d<-rw_intercept <- 
-  ggplot(results_window, aes(x=last_year, y=as.factor(window), fill= Intercept)) + 
-  geom_tile()+
-  xlab("")+
-  ylab("Time Period Length (Years)")+
-      geom_vline(xintercept = c(2006.5,2014.5), lty=2)+
-
-  scale_fill_gradient2(low = col[2],
-                       mid = "#FFFFCC",
-                       high = col[3], midpoint = 5.25)+
+                       high = col[3], midpoint =0)+
+    geom_text(
+    aes(label = slope_significance),
+    color = "black",
+    size = 8,
+    vjust = 0.75 # Centers the asterisk vertically
+  )+
       theme_classic()
   
-panel_d
+panel_c
 
+panel_d<-rw_intercept <- ggplot(results_window, aes(x=last_year, y=as.factor(window), fill= Intercept)) + 
+  geom_tile()+
+  xlab("")+
+  ylab("")+
+  scale_fill_gradient2(low = col[2],
+                       mid = "#FFFFCC",
+                       high = col[3], midpoint =5.25)+
+    geom_text(
+    aes(label = intercept_significance),
+    color = "black",
+    size = 8,
+    vjust = 0.75 # Centers the asterisk vertically
+  )+
+      theme_classic()
+panel_d
 ```
 
 ```{r}
@@ -636,8 +716,8 @@ top_row<-ggarrange(panel_f, panel_b, panel_a, labels=c("A.", "B.", "C."), nrow=1
 top_row<-annotate_figure(top_row, bottom = text_grob("Year"))
 bottom_row<-ggarrange(panel_d,panel_c, labels=c("D.", "E."), nrow=1,ncol=2)
 bottom_row<-annotate_figure(bottom_row, bottom = text_grob("Last Year of Time Period"))
-ggarrange(top_row, bottom_row, nrow=2)
-ggsave("Figure_1_lmgam_comparisonv2.png", height = 7, width = 11,bg="white")
+ggarrange(top_row, bottom_row, nrow=2, heights=c(1.5,1))
+ggsave("Figure_2_lmgam_comparisonv2.png", height = 7, width = 11,bg="white")
 
 pdf(file = "Figure1.pdf",   # The directory you want to save the file in
     width = 11, # The width of the plot in inches
@@ -645,6 +725,63 @@ pdf(file = "Figure1.pdf",   # The directory you want to save the file in
 
 ggarrange(top_row, bottom_row, nrow=2)
 dev.off()
+```
+
+## DLM
+
+For completeness, we also show the slope estimates and model fits for a DLM. We discuss the approach for a DLM in greater detail in Appendix 2: Lake Washington Analysis. Briefly, we find that all three modeling approaches have similar slope estimates (@suppfig-dlmSlope) and fitted values (@suppfig-dlmFit) using all three modeling approaches.
+
+```{r}
+#| warning: FALSE
+#| include: FALSE
+
+m <- 2
+TT <- nrow(full_data)
+B <- diag(m) ## 2x2; Identity
+U <- matrix(0, nrow = m, ncol = 1) ## 2x1; both elements = 0
+Q <- matrix(list(0), m, m) ## 2x2; all 0 for now
+diag(Q)[1] <- 0.0000001
+diag(Q)[2] <- c("q.beta")
+#diag(Q) <- c("q.alpha", "q.beta") ## 2x2; diag = (q1,q2)
+Z <- array(NA, c(1, m, TT)) ## NxMxT; empty for now
+Z[1, 1, ] <- rep(1, TT) ## Nx1; 1's for intercept
+Z[1, 2, ] <- full_data$Large ## Nx1; predictor variable
+A <- matrix(0) ## 1x1; scalar = 0
+R <- matrix("r") ## 1x1; scalar = r
+x0 = matrix(c(0, 0)) ## initial conditions known
+## only need starting values for regr parameters
+inits_list <- list(x0 = matrix(c(0, 0), nrow = m))
+## list of model matrices & vectors
+mod_list <- list(B = B, x0=x0, U = U, Q = Q, Z = Z, A = A, R = R)
+# convert response to matrix
+dat_mat <- matrix(scale(full_data$mean_sec), nrow = 1)
+# fit the model -- crank up the maxit to ensure convergence
+dlm_1 <- MARSS(dat_mat, inits = inits_list, model = mod_list,
+control = list(maxit=4000))
+#AIC(dlm_1)
+
+```
+
+```{r, echo=FALSE}
+full_data$int_est <- dlm_1$states[1,]
+full_data$int_se <- dlm_1$states.se[1,]
+
+full_data$slope_est <- dlm_1$states[2,]
+full_data$slope_se <- dlm_1$states.se[2,]
+dlm_plot<-ggplot(full_data, aes(year4, slope_est)) +
+geom_ribbon(aes(ymin=slope_est-2*slope_se, ymax = slope_est+2*slope_se), alpha=0.6) +
+geom_line() + ylab("Time-varying slope") + xlab("Year") + theme_classic()
+```
+
+```{r, echo=FALSE}
+pred <- fitted(dlm_1)
+full_data$preddlm <- pred$.fitted
+dlmFit<-ggplot(full_data, aes(year4, preddlm)) +
+geom_line() +
+ylab("Predicted Water Clarity") +
+xlab("Year") +
+theme_classic() +
+geom_point(aes(year4,scale(full_data$mean_sec)), col="red",alpha=0.5)
 ```
 
 ## Figures & Tables
@@ -665,15 +802,19 @@ Standardized time series of ecological conditions observed in Trout Lake.
 lm_resid
 ```
 
-Model residuals for the time-varying water clarity - zooplankton model compared to a time-invariant model where large zooplankton is used as a covariate without *a priori* defined time peariods
+Model residuals for the time-varying water clarity - zooplankton model compared to a time-invariant model where large zooplankton is used as a covariate without *a priori* defined time peariods. p-value denotes the significance of the trend in residuals through time.
 :::
 
 ::: {#suppfig-lmqq}
 ```{r}
 #| echo: false
 #| warning: false
-
-lm_qq
+#| fig-width: 7
+#| out-width: "100%"
+par(mfrow = c(1,2))
+plotQQunif(simulationOutputzoop, main="Time-Invariant Large Zooplankton")
+plotQQunif(simulationOutputzoop_slope_int, main="Time-Varying Large Zooplankton")
+par(mfrow = c(1, 1))
 ```
 
 Q-Q plot for the time-varying water clarity - zooplankton model compared to a time-invariant model where large zooplankton is used as a covariate without *a priori* defined time peariods
@@ -703,15 +844,20 @@ Predicted values of water clarity (black line) compared to observed values (red 
 gam_resid
 ```
 
-Model residuals for a smooth on zooplankton abundance, a smooth on year, and a smooth on year by zooplankton.
+Model residuals for a smooth on zooplankton abundance, a smooth on year, and a smooth on year by zooplankton. p-value denotes the significance of the trend in residuals through time.
 :::
 
 ::: {#suppfig-gamqq}
 ```{r}
 #| echo: false
 #| warning: false
-
-gam_qq
+#| fig-width: 7
+#| out-width: "100%"
+par(mfrow = c(1,3))
+plotQQunif(simulationOutput4, main="Smooth by Year")
+plotQQunif(simulationOutput5, main="Smooth by Zooplankton")
+plotQQunif(simulationOutput1, main="Time-Varying Zooplankton")
+par(mfrow = c(1,1))
 ```
 
 Q-Q plot for a smooth on zooplankton abundance, a smooth on year, and a smooth on year by zooplankton.
@@ -731,6 +877,24 @@ panel_b
 ```
 
 Estimates of the intercept of the relationship based on a time-varying LM (blue) and a time-varying GAM (red)
+:::
+
+::: {#suppfig-dlmSlope}
+```{r}
+#| echo: false
+#| error: false
+#| warning: false
+dlm_plot
+```
+:::
+
+::: {#suppfig-dlmFit}
+```{r}
+#| echo: false
+#| error: false
+#| warning: false
+dlmFit
+```
 :::
 
 ::: {#supptab-AIC}

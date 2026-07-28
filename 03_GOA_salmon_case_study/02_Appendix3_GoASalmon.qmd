@@ -237,19 +237,34 @@ resid_df2 <- data.frame(resid = resid(gam_aksalmon_2),
 resid_df3 <- data.frame(resid = resid(gam_aksalmon_3),
                        date = dat_aksalmon$date,
                        Model = "Intercept")
-resids <- rbind(resid_df1, resid_df2)#,resid_df3)
+p_values<-data.frame(p_value=c(
+                     summary(gam(resid(gam_aksalmon_1)~s(dat_aksalmon$date)))$s.pv,
+                     summary(gam(resid(gam_aksalmon_2)~s(dat_aksalmon$date)))$s.pv,
+                     summary(gam(resid(gam_aksalmon_3)~s(dat_aksalmon$date)))$s.pv), 
+           Model=c("Intercept + slope",  "Slope", "Intercept"))
+resids <- rbind(resid_df1, resid_df2)%>%#,resid_df3)
+left_join(p_values)
+
 gamresid <- ggplot(resids, aes(date, resid)) + 
   geom_point() + 
   geom_smooth(method = 'gam',formula = y ~ s(x)) + 
-  theme_classic() + xlab("Date") + ylab("Residuals") + 
+  theme_classic() + xlab("Date") + ylab("Residuals") +
+     geom_text(
+    aes(x = 1970, y = -2, label =paste0("p = ",round(p_value,4))),
+    inherit.aes = FALSE)+
+  ylim(c(-3, 4))+
   facet_wrap(~ Model, nrow=2) + ggtitle("GAM Residuals")
 ```
 
 ```{r echo = FALSE}
-gamquant<-ggplot(resids, aes(sample = resid)) + stat_qq() + stat_qq_line() + labs(
-    x = "Theoretical Quantiles",
-    y = "Sample Quantiles"
-  ) + theme_classic() + facet_wrap(~ Model,scale="free_y") + ggtitle("GAM Residuals")
+
+simulationOutputcr1 <- simulateResiduals(fittedModel =gam_aksalmon_1)
+simulationOutputcr2 <- simulateResiduals(fittedModel =gam_aksalmon_2)
+
+# gamquant<-ggplot(resids, aes(sample = resid)) + stat_qq() + stat_qq_line() + labs(
+#     x = "Theoretical Quantiles",
+#     y = "Sample Quantiles"
+#   ) + theme_classic() + facet_wrap(~ Model,scale="free_y") + ggtitle("GAM Residuals")
 
 #simulationOutput <- simulateResiduals(fittedModel = gam_aksalmon_3, refit = T)
 #plot(simulationOutput)
@@ -492,23 +507,169 @@ int_panel <- ggplot(coefs, aes(date, int_est, group = time_varying, fill=time_va
 
 We fit two distinct DLM models to the salmon catch data and SST anomalies to compare to the results of the GAM models. Generally, the parameters estimated by the DLM are more certain and follow similar patterns through time as the GAM (@suppfig-tvint & @suppfig-tvslope). There is also more interannual variability in the parameter estimates of the DLM compared to the continuously smoothed pattern of the GAM. We also find similar residual patterns for the DLM compared to the GAM (@suppfig-dlmresid & @suppfig-dlmqq).
 
-```{r echo=FALSE}
+```{r echo=FALSE, include=FALSE, warning=FALSE}
 pred <- predict(dlm_aksalmon_1)$pred
 pred2 <- predict(dlm_aksalmon_2)$pred
 
-resid_df1 <- data.frame(resid = pred$y - pred$estimate,
+resid_df1 <- data.frame(resid =residuals(dlm_aksalmon_1)$.std.resids, #pred$y - pred$estimate,
                        date = dat_aksalmon$date,
                        Model = "Intercept + slope")
-resid_df2 <- data.frame(resid = pred2$y - pred2$estimate,
+resid_df2 <- data.frame(resid = residuals(dlm_aksalmon_2)$.std.resids, #pred2$y - pred2$estimate,
                        date = dat_aksalmon$date,
                        Model = "Slope")
-resids <- rbind(resid_df1, resid_df2)
+
+p_values<-data.frame(p_value=c(summary(gam(residuals(dlm_aksalmon_1)$.std.resids~s(dat_aksalmon$date)))$s.pv,
+                     summary(gam(residuals(dlm_aksalmon_2)$.std.resids~s(dat_aksalmon$date)))$s.pv), 
+           Model=c("Intercept + slope","Slope"))
+
+resids <- rbind(resid_df1, resid_df2)%>%
+  left_join(p_values)
+
 dlm_resids<-ggplot(resids, aes(date, resid)) + 
   geom_point() + 
   ylim(c(-2,4))+
-  geom_smooth(method = 'gam',formula = y ~ s(x)) + 
+  geom_smooth(method = 'gam',formula = y ~ s(x)) +
+     geom_text(
+    aes(x = 1980, y = 3.5, label =paste0("p = ",round(p_value,4))),
+    inherit.aes = FALSE)+
   theme_classic() + xlab("Date") + ylab("Residuals") + 
   facet_wrap(~ Model, nrow=2, scale="free_y") + ggtitle("DLM Residuals")
+```
+
+```{r}
+#| echo: false
+#| include: false
+#| error: false
+#| warning: false
+resid<-residuals(dlm_aksalmon_1)
+resid_dlm <- predict(dlm_aksalmon_1)$pred
+resid_dlm$resid <- resid_dlm$y - resid_dlm$estimate
+dat$n_date <- as.numeric(as.factor(dat_aksalmon$date))
+resid_dlm$date <- dat_aksalmon$date
+
+p<-summary(gam(resid_dlm$resid~s(dat_aksalmon$date)))$s.pv
+dlm_resid1<- ggplot(resid_dlm, aes(date, resid)) + 
+  geom_point() + 
+  geom_smooth(method = "gam", formula = y ~ s(x)) + 
+  theme_classic() + xlab("Date") + ylab("Residuals") + ggtitle("DLM Residuals")+
+  annotate("text", x = 1980, y = -3, label =paste0("Temporal Trend: p = ",round(p,3)),color = "black", size = 5)+
+  annotate("text", x = 1980, y = -3, label =paste0("Temporal Trend: p = ",round(p,3)),color = "black", size = 5)
+
+## KS Test
+ks<- ks.test(
+  x = resid$.std.resids,
+  y = "pnorm", 
+  mean = mean(resid$.std.resids, na.rm = TRUE), 
+  sd = sd(resid$.std.resids, na.rm = TRUE)
+)$p.value
+
+# Dispersion test
+clean_resid <- na.omit(resid$.std.resids)
+n_obs <- length(clean_resid)                  # Number of data points
+param_count <- dlm_aksalmon_1$num.params                # Total estimated parameters
+df_residual <- n_obs - param_count            # Degrees of freedom
+chi_stat <- sum(clean_resid^2)
+p_value <- pchisq(chi_stat, df = df_residual, lower.tail = FALSE)
+cat("Chi-Square Stat:", chi_stat, "\n",
+    "Degrees of Freedom:", df_residual, "\n",
+    "P-value for Overdispersion:", p_value, "\n")
+
+# outlier
+res_obj <- MARSSresiduals(dlm_aksalmon_1)
+obs_res <- res_obj$std.residuals[1, ] # Extract for the first response variable
+obs_res <- obs_res[!is.na(obs_res)]   # Remove missing values
+n_time <- length(obs_res)
+alpha_corrected <- 0.05 / n_time
+z_critical <- qnorm(1 - alpha_corrected / 2)
+total_outliers <- sum(abs(obs_res) > z_critical)
+prob_outlier <- alpha_corrected
+binomial_test <- binom.test(
+  x = total_outliers,
+  n = n_time,
+  p = prob_outlier,
+  alternative = "greater" # Testing if we have MORE outliers than expected
+)
+
+dlm_qq_plot1 <-ggplot(resid, aes(sample = .std.resids)) + 
+  stat_qq() + stat_qq_line(col='red') + labs(
+     x = "Theoretical Quantiles",
+     y = "Sample Quantiles"
+   ) + theme_classic() + ggtitle("Slope + Intercept")+
+annotate("text", x = -1, y = 1.5, label = paste0("KS test: p = ",round(ks,3)), color = "black", size = 3)+
+annotate("text", x = -1, y = 1, label ="Deviation: p = n.s.", color = "black", size = 3)+
+annotate("text", x = 0, y = 0.2, label = paste0("Dispersion test: p = ",round(p_value,3)), color = "black", size = 3)+
+annotate("text", x = 0, y = -0.2, label ="Deviation: p = n.s.", color = "black", size = 3)+
+annotate("text", x = 1, y = -1, label = paste0("Outlier test: p = 1"), color = "black", size = 3)+
+annotate("text", x = 1, y = -1.5, label ="Deviation: p = n.s.", color = "black", size = 3)
+
+```
+
+```{r}
+#| echo: false
+#| include: false
+#| error: false
+#| warning: false
+resid<-residuals(dlm_aksalmon_2)
+resid_dlm <- predict(dlm_aksalmon_2)$pred
+resid_dlm$resid <- resid_dlm$y - resid_dlm$estimate
+dat$n_date <- as.numeric(as.factor(dat_aksalmon$date))
+resid_dlm$date <- dat_aksalmon$date
+
+p<-summary(gam(resid_dlm$resid~s(dat_aksalmon$date)))$s.pv
+dlm_resid2<- ggplot(resid_dlm, aes(date, resid)) + 
+  geom_point() + 
+  geom_smooth(method = "gam", formula = y ~ s(x)) + 
+  theme_classic() + xlab("Date") + ylab("Residuals") + ggtitle("DLM Residuals")+
+  annotate("text", x = 1980, y = -3, label =paste0("Temporal Trend: p = ",round(p,3)),color = "black", size = 3)+
+  annotate("text", x = 1980, y = -3, label =paste0("Temporal Trend: p = ",round(p,3)),color = "black", size = 3)
+
+## KS Test
+ks<- ks.test(
+  x = resid$.std.resids,
+  y = "pnorm", 
+  mean = mean(resid$.std.resids, na.rm = TRUE), 
+  sd = sd(resid$.std.resids, na.rm = TRUE)
+)$p.value
+
+# Dispersion test
+clean_resid <- na.omit(resid$.std.resids)
+n_obs <- length(clean_resid)                  # Number of data points
+param_count <- dlm_aksalmon_2$num.params                # Total estimated parameters
+df_residual <- n_obs - param_count            # Degrees of freedom
+chi_stat <- sum(clean_resid^2)
+p_value <- pchisq(chi_stat, df = df_residual, lower.tail = FALSE)
+cat("Chi-Square Stat:", chi_stat, "\n",
+    "Degrees of Freedom:", df_residual, "\n",
+    "P-value for Overdispersion:", p_value, "\n")
+
+# outlier
+res_obj <- MARSSresiduals(dlm_aksalmon_2)
+obs_res <- res_obj$std.residuals[1, ] # Extract for the first response variable
+obs_res <- obs_res[!is.na(obs_res)]   # Remove missing values
+n_time <- length(obs_res)
+alpha_corrected <- 0.05 / n_time
+z_critical <- qnorm(1 - alpha_corrected / 2)
+total_outliers <- sum(abs(obs_res) > z_critical)
+prob_outlier <- alpha_corrected
+binomial_test <- binom.test(
+  x = total_outliers,
+  n = n_time,
+  p = prob_outlier,
+  alternative = "greater" # Testing if we have MORE outliers than expected
+)
+
+dlm_qq_plot2 <-ggplot(resid, aes(sample = .std.resids)) + 
+  stat_qq() + stat_qq_line(col='red') + labs(
+     x = "Theoretical Quantiles",
+     y = "Sample Quantiles"
+   ) + theme_classic() + ggtitle("Slope")+
+annotate("text", x = -1, y = 1.5, label = paste0("KS test: p = ",round(ks,3)), color = "black", size = 3)+
+annotate("text", x = -1, y = 1, label ="Deviation: p = n.s.", color = "black", size = 3)+
+annotate("text", x = 0, y = 0.2, label = paste0("Dispersion test: p = ",round(p_value,3)), color = "black", size = 3)+
+annotate("text", x = 0, y = -0.2, label ="Deviation: p = n.s.", color = "black", size = 3)+
+annotate("text", x = 1, y = -1, label = paste0("Outlier test: p = 1"), color = "black", size = 3)+
+annotate("text", x = 1, y = -1.5, label ="Deviation: p = n.s.", color = "black", size = 3)
+
 ```
 
 ```{r echo = FALSE}
@@ -573,15 +734,23 @@ Time-varying slope of the GAM model representing the relationship between SST an
 
 ::: {#suppfig-gamresid}
 ```{r, echo=FALSE}
+#| fig-height: 6
 gamresid
 ```
 
-Time series of residuals from the GAM model fit with a time-varying slope and both a time-varying slope and intercept.
+Time series of residuals from the GAM model fit with a time-varying slope and both a time-varying slope and intercept. p-value denotes the significance of the trend in residuals through time. 
+:::
 :::
 
 ::: {#suppfig-gamqq}
 ```{r, echo=FALSE}
-gamquant
+#| fig-width: 7
+#| out-width: "100%"
+
+par(mfrow = c(1, 2))
+plotQQunif(simulationOutputcr1,main = "Intercept + slope")
+plotQQunif(simulationOutputcr2,main = "Slope")
+par(mfrow = c(1, 1))
 ```
 
 QQ plot from the GAM model fit with a time-varying slope and both a time-varying slope and intercept.
@@ -617,15 +786,17 @@ Time-varying slope of the DLM model representing the relationship between SST an
 
 ::: {#suppfig-dlmresid}
 ```{r, echo=FALSE}
+#| fig-height: 6
 dlm_resids
 ```
 
-Time series of residuals from the DLM model fit with a time-varying slope and both a time-varying slope and intercept.
+Time series of residuals from the DLM model fit with a time-varying slope and both a time-varying slope and intercept. p-value denotes the significance of the trend in residuals through time. 
+:::
 :::
 
 ::: {#suppfig-dlmqq}
 ```{r, echo=FALSE}
-dlm_qq
+ggarrange(dlm_qq_plot1,dlm_qq_plot2)
 ```
 
 QQ plot from the DLM model fit with a time-varying slope and both a time-varying slope and intercept.
