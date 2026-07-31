@@ -117,8 +117,8 @@ TT <- nrow(dat)
 B <- diag(m) ## 2x2; Identity
 U <- matrix(0, nrow = m, ncol = 1) ## 2x1; both elements = 0
 Q <- matrix(list(0), m, m) ## 2x2; all 0 for now
-diag(Q)[1] <- 0.0000001 ## time-invariant intercept
-diag(Q)[2] <- c("q.beta") ## time-varying slope
+diag(Q)[1] <- 0.0000001 ## time-independent intercept
+diag(Q)[2] <- c("q.beta") ## time-dependent slope
 #diag(Q) <- c("q.alpha", "q.beta") ## 2x2; diag = (q1,q2)
 Z <- array(NA, c(1, m, TT)) ## NxMxT; empty for now
 Z[1, 1, ] <- rep(1, TT) ## Nx1; 1's for intercept
@@ -136,7 +136,6 @@ dat_mat <- matrix(dat$y_adj, nrow = 1)
 dlm_1 <- MARSS(dat_mat, inits = inits_list, model = mod_list,
 control = list(maxit=4000))
 
-AIC(dlm_1)
 
 ```
 
@@ -183,7 +182,7 @@ dat$slope_est <- dlm_1$states[2,]
 dat$slope_se <- dlm_1$states.se[2,]
 DLM_plot <- ggplot(dat, aes(date, slope_est)) +
 geom_ribbon(aes(ymin=slope_est-2*slope_se, ymax = slope_est+2*slope_se), alpha=0.6) +
-geom_line() + ylab("Time-varying slope") + xlab("") + theme_classic()
+geom_line() + ylab("Time-dependent slope") + xlab("") + theme_classic()
 ```
 
 ```{r, echo=FALSE}
@@ -538,7 +537,7 @@ final_plot <- (pA + pB + pC + pD + pE) +
 ggsave(final_plotv2, filename="gam_comparison_gridv2.png", height = 8, width = 10, bg="white")
 ```
 
-It is important to also examine the residuals from these models. For example, we can look at the residuals for the GAMs fit to the Lake Washington data. In looking across models, those that do not include time-varying parameters show evidence of a persistent trend in the residuals that is not accounted for by the model (@suppfig-gamresid) despite the q-q plot being reasonable for all model specifications (@suppfig-gamqq). 
+It is important to also examine the residuals from these models. For example, we can look at the residuals for the GAMs fit to the Lake Washington data. In looking across models, those that do not include time-dependent parameters show evidence of a persistent trend in the residuals that is not accounted for by the model (@suppfig-gamresid) despite the q-q plot being reasonable for all model specifications (@suppfig-gamqq). 
 
 ```{r, include=FALSE}
 p_values<-data.frame(p_value=c(summary(gam(resid(gam_cr1)~s(dat$n_date)))$s.pv,
@@ -724,7 +723,7 @@ gamknots <- ggplot(df_smooth, aes(date, est, col=knots, fill=knots)) +
 #   scale_colour_manual(values=c(col[4],col[5],col[3],col[1]))+
 #   scale_fill_manual(values=c(col[4],col[5],col[3],col[1]))+ 
 #   #ggtitle("Effect of smoothing DF on SEs")+
-#   theme_classic() + xlab("") + ylab("Phosphorous effect on blue-green algae \n (Time-varying slope)") 
+#   theme_classic() + xlab("") + ylab("Phosphorous effect on blue-green algae \n (Time-dependent slope)") 
 # 
 # panel.c<-ggplot(df_smooth_type, aes(date, est, col=type)) + 
 #        geom_ribbon(aes(ymin = est-2*se, ymax = est+2*se, y = NULL, fill=type),
@@ -750,7 +749,7 @@ gamknots <- ggplot(df_smooth, aes(date, est, col=knots, fill=knots)) +
 
 ## LM
 
-Pollution reduction occurred over a multi-year period (1964 - 1968) and as such the change in the relationship between phosphorus and cyanobacteria is likely a continuous process evolving over time. Here we demonstrate a LM approach for the Lake Washington, choosing a year in the middle of the time period as the temporal break (1966). We find these results agree with our GAM/DLM results such that the best model (@supptab-aic) includes a time-varying slope where prior to 1966 there is a strong positive relationship between total phosphorus and cyanobacteria prior to 1966 and this relationship is reduced to nearly 0 after 1966 (@supptab-coef). Given expected change in the relationship is supposed to be gradual through time, the hypothesized mechanism for the change in the relationship supports using a GAM or DLM rather than an LM but we include the LM to show agreement across the three model types for completeness.
+Pollution reduction occurred over a multi-year period (1964 - 1968) and as such the change in the relationship between phosphorus and cyanobacteria is likely a continuous process evolving over time. Here we demonstrate a LM approach for the Lake Washington, choosing a year in the middle of the time period as the temporal break (1966). We find these results agree with our GAM/DLM results such that the best model (@supptab-aic) includes a time-dependent slope where prior to 1966 there is a strong positive relationship between total phosphorus and cyanobacteria prior to 1966 and this relationship is reduced to nearly 0 after 1966 (@supptab-coef). Given expected change in the relationship is supposed to be gradual through time, the hypothesized mechanism for the change in the relationship supports using a GAM or DLM rather than an LM but we include the LM to show agreement across the three model types for completeness.
 
 ```{r}
 #| echo: false
@@ -762,7 +761,7 @@ LW_int<-lm(y_adj~1, data=dat)
 LW_zp<-lm(y_adj~lagged_zp, data=dat)
 LW_ns<-lm(y_adj~lagged_zp*as.factor(period), data=dat)
 
-AIC_table<-data.frame(Model=c("Time-Invariant Intercept", "Time-Varying Intercept", "Time-Invariant Slope", "Time-Varying Slope"), AIC=round(c(AIC(LW_int),AIC(LW_zp),AIC(LW_period),AIC(LW_ns)),digits=2))
+AIC_table<-data.frame(Model=c("Time-Independent Intercept", "Time-Dependent Intercept", "Time-Independent Slope", "Time-Dependent Slope"), AIC=round(c(AIC(LW_int),AIC(LW_zp),AIC(LW_period),AIC(LW_ns)),digits=2))
 
 aicpresults<-data.table(coef(summary(LW_ns)), keep.rownames = 'term')%>% mutate(across(where(is.numeric), round, digits=2))
 
@@ -814,7 +813,7 @@ A CCF (Cross-Correlation Function) plot that represents the correlation between 
 DLM_plot
 ```
 
-Time-varying slope of the relationship between bluegreen algae (response) and total phosphorus (driver) from a DLM
+Time-dependent slope of the relationship between bluegreen algae (response) and total phosphorus (driver) from a DLM
 :::
 
 ::: {#suppfig-dlmFit}
@@ -825,7 +824,7 @@ Time-varying slope of the relationship between bluegreen algae (response) and to
 dlmFit
 ```
 
-Fit of the DLM model with time-varying slope (black line) to observed bluegreen algae abundance (red points).
+Fit of the DLM model with time-dependent slope (black line) to observed bluegreen algae abundance (red points).
 :::
 
 ::: {#suppfig-dlmresid}
@@ -836,7 +835,7 @@ Fit of the DLM model with time-varying slope (black line) to observed bluegreen 
 dlm_resid
 ```
 
-Time series of residuals from the DLM model fit with a time-varying slope between blue-green algae and phosphorus. p-value denotes the significance of the trend in residuals through time.
+Time series of residuals from the DLM model fit with a time-dependent slope between blue-green algae and phosphorus. p-value denotes the significance of the trend in residuals through time.
 :::
 
 ::: {#suppfig-dlmqq}
@@ -848,7 +847,7 @@ Time series of residuals from the DLM model fit with a time-varying slope betwee
 dlm_qq_plot
 ```
 
-Q-Q plot from the DLM model fit with a time-varying slope between blue-green algae and phosphorus
+Q-Q plot from the DLM model fit with a time-dependent slope between blue-green algae and phosphorus
 :::
 
 ::: {#suppfig-gamFit}
@@ -896,7 +895,7 @@ Q-Q for each of the five GAM models where residuals from models that do not have
 gam_smooth
 ```
 
-Effect of the choice of smoother function on estimates of time-varying slope parameter where color denotes model type. 3 GAM smoother types (cr, tp, gp) are contrasted with a DLM (dlm).
+Effect of the choice of smoother function on estimates of time-dependent slope parameter where color denotes model type. 3 GAM smoother types (cr, tp, gp) are contrasted with a DLM (dlm).
 :::
 
 ::: {#suppfig-gamknots}
@@ -904,7 +903,7 @@ Effect of the choice of smoother function on estimates of time-varying slope par
 gamknots
 ```
 
-Effect of smoothing degrees of freedom on the standard errors of the estimates of time-varying slope parameter where color denotes model type. We show 4 distinct knots (colors)
+Effect of smoothing degrees of freedom on the standard errors of the estimates of time-dependent slope parameter where color denotes model type. We show 4 distinct knots (colors)
 :::
 
 ::: {#supptab-aic}
@@ -915,7 +914,7 @@ knitr::kable(head(AIC_table))
 
 ```
 
-AIC values comparing linear models with time-varying abundance models versus time-varying relationship models
+AIC values comparing linear models with time-dependent abundance models versus nonstationary relationship models
 :::
 
 ::: {#supptab-coef}
@@ -923,5 +922,5 @@ AIC values comparing linear models with time-varying abundance models versus tim
 knitr::kable(head(aicpresults))
 ```
 
-Model coefficients for the time-varying relationship model between total phosphorus and cyanobacteria
+Model coefficients for the nonstationary relationship model between total phosphorus and cyanobacteria
 :::

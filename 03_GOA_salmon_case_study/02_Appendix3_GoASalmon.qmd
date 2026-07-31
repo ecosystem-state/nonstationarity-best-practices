@@ -88,7 +88,7 @@ dat %>%
 
 We start our investigation using linear models, to evaluate the relationship between salmon catch and SST anomalies with periods defined *a-priori* as before and after 1988/1989 (from Litzow et al. 2018). Previous investigations used this approach, and while we primarily discuss DLMs and GAMs for this dataset in the main text, we include this illustrative example here for completeness and comparability to the previous study.
 
-We compare linear model structures using classic model selection criteria, AIC. First, we examine a 1) intercept only model, 2) salmon abundance with period as a predictor, 3) salmon abundance with period and SST anomalies as predictors, and 4) an interaction between SST anomalies and period. This shows that model 2 is a better fit to the data than model 1 indicating that a time-varying intercept is an improvement to model fit than a time-invariant intercept. Similarly, model 4 is the best model showing that a time-varying slope with SST is an improvement to a time-invariant slope (@supptab-AIC).
+We compare linear model structures using classic model selection criteria, AIC. First, we examine a 1) intercept only model, 2) salmon abundance with period as a predictor, 3) salmon abundance with period and SST anomalies as predictors, and 4) an interaction between SST anomalies and period. This shows that model 2 is a better fit to the data than model 1 indicating that a time-dependent intercept is an improvement to model fit than a time-independent intercept. Similarly, model 4 is the best model showing that a time-dependent slope with SST is an improvement to a time-independent slope (@supptab-AIC).
 
 ```{r, echo=FALSE}
 dat2 %>%
@@ -108,14 +108,14 @@ mod_sst.period_AIC <- AIC(mod_sst.period)
 mod_sst.period.int_AIC <- AIC(mod_sst.period.int) 
 mod_sst.period.noint_AIC <- AIC(mod_sst.period.noint) 
 
-model_names <- c("1. Intercept only", "2. Intercept by period only \n (time-varying intercept)", 
-"3. Intercept by period and SST", "4. Interaction between SST and period \n (time-varying slope and intercept)", "5. Time-varying slope")
+model_names <- c("1. Intercept only", "2. Intercept by period only \n (time-dependent intercept)", 
+"3. Intercept by period and SST", "4. Interaction between SST and period \n (time-dependent slope and intercept)", "5. Time-dependent slope")
 AIC <- c(mod_int_AIC, mod_mod_period, mod_sst.period_AIC,mod_sst.period.int_AIC,mod_sst.period.noint_AIC)
 AIC_tab <-data.frame(Model = model_names, AIC = round(AIC, 2))
 
 ```
 
-Functionally, model 4 has a time-varying slope and a time-varying intercept which we can see by both plotting the relationships and examining the model output. We can see a strong positive correlation prior to 1988 (@suppfig-TSslm) followed by a weak negative relationship which is represented in the slopes of the relationship (@supptab-results & @suppfig-fitslm).
+Functionally, model 4 has a time-dependent slope and a time-dependent intercept which we can see by both plotting the relationships and examining the model output. We can see a strong positive correlation prior to 1988 (@suppfig-TSslm) followed by a weak negative relationship which is represented in the slopes of the relationship (@supptab-results & @suppfig-fitslm).
 
 ```{r, echo = FALSE}
 
@@ -146,9 +146,9 @@ TS_slm<- ggplot()+
 
 ## GAM
 
-Next, we consider generalized additive models. We fit two distinct GAM models to the salmon catch data and SST anomalies to illustrate the differences in a model with a time-varying slope and a time-varying intercept. We find that when fitting a time-varying slope and time-varying intercept model, most of the variability in the relationship is explained by the time-varying intercept (@suppfig-tvintgam) while the time-varying slope does not change much through time (@suppfig-tvslopegam). When only a time-varying slope is fit to the data, the slope parameter is much more variable through time (@suppfig-tvslopegam), and looks similar to the slope estimated by the linear models (@suppfig-fitslm).
+Next, we consider generalized additive models. We fit two distinct GAM models to the salmon catch data and SST anomalies to illustrate the differences in a model with a time-dependent slope and a time-dependent intercept. We find that when fitting a time-dependent slope and time-dependent intercept model, most of the variability in the relationship is explained by the time-dependent intercept (@suppfig-tvintgam) while the time-dependent slope does not change much through time (@suppfig-tvslopegam). When only a time-dependent slope is fit to the data, the slope parameter is much more variable through time (@suppfig-tvslopegam), and looks similar to the slope estimated by the linear models (@suppfig-fitslm).
 
-Next, we check the residuals plots for both parameterizations of the models. The time-varying slope model appears to have some residual temporally variability while there are no trends through time in the model with both a time-varying slope and a time-varying intercept (@suppfig-gamresid) and the qq-pot looks reasonable for both (@suppfig-gamqq).
+Next, we check the residuals plots for both parameterizations of the models. The time-dependent slope model appears to have some residual temporally variability while there are no trends through time in the model with both a time-dependent slope and a time-dependent intercept (@suppfig-gamresid) and the qq-pot looks reasonable for both (@suppfig-gamqq).
 
 ```{r,include=FALSE}
 dat_aksalmon <- readRDS("../03_GOA_salmon_case_study/data_for_AK_salmon_example.rds")
@@ -189,13 +189,13 @@ coefs_gam <- rbind(coef_gam_AK1, coef_gam_AK2)
 slope_panel_gam <-ggplot(coefs_gam, aes(date, slope_est, group = time_varying, fill=time_varying, col=time_varying)) + 
   geom_ribbon(aes(ymin=slope_est-2*slope_se, ymax = slope_est+2*slope_se), alpha=0.3, col = NA) + 
   geom_line(aes(lty=time_varying)) + 
-  ylab("Time-varying slope") + 
+  ylab("Time-dependent slope") + 
   xlab("") + theme_classic() + 
   ggtitle("Slope")+
   #ylim(c(-5,11))+
   facet_wrap(~ dataset, scale="free") + 
-  #scale_color_viridis_d(option="magma",begin=0.2, end=0.8, name = "Time-varying") + 
-  #scale_fill_viridis_d(option="magma",begin=0.2, end=0.8, name = "Time-varying") + 
+  #scale_color_viridis_d(option="magma",begin=0.2, end=0.8, name = "Time-dependent") + 
+  #scale_fill_viridis_d(option="magma",begin=0.2, end=0.8, name = "Time-dependent") + 
   scale_fill_manual(values=c(col[4],col[5]))+
   scale_colour_manual(values=c(col[4],col[5]))+
   #guides(fill="none",colour="none",lty="none")+
@@ -209,13 +209,13 @@ coefs_gam$int_se[is.na(coefs_gam$int_est)] <- 0.2398
 int_panel_gam <- ggplot(coefs_gam, aes(date, int_est, group = time_varying, fill=time_varying, col=time_varying)) + 
   geom_ribbon(aes(ymin=int_est-2*int_se, ymax = int_est+2*int_se), alpha=0.3, col = NA) + 
   geom_line(aes(lty=time_varying)) + 
-  ylab("Time-varying intercept") + 
+  ylab("Time-dependent intercept") + 
   xlab("") + theme_classic() + 
   facet_wrap(~ dataset, scale="free") + 
   ggtitle("Intercept")+
   #ylim(-20,10.5)+
-  #scale_color_viridis_d(option="magma",begin=0.2, end=0.8, name = "Time-varying") + 
-  #scale_fill_viridis_d(option="magma",begin=0.2, end=0.8, name = "Time-varying") + 
+  #scale_color_viridis_d(option="magma",begin=0.2, end=0.8, name = "Time-dependent") + 
+  #scale_fill_viridis_d(option="magma",begin=0.2, end=0.8, name = "Time-dependent") + 
   scale_fill_manual(values=c(col[4],col[5]))+
   scale_colour_manual(values=c(col[4],col[5]))+
   
@@ -306,9 +306,9 @@ foldsbymodelplot<-train_df |>
   theme_classic()
 ```
 
-We need to decide if there is enough ecological evidence to support a model with both a time-varying slope and time-varying intercept and whether that model has signs of overfitting. We can do this by using cross validation and comparing the root mean square error (RMSE) of a set of training data compared to test data. For time series data its important that cross validation methods retain the temporal structure of the data. To do this, we used approximate leave-future out cross validation (LFO-CV) where we fit the model to 15 years of data (training data, first year to year n-1) and predict 1 year ahead (test data, year n). The model is used to produce in-sample predictions for the training data and one-year-ahead out of sample predictions for the test data. Then the model is iteratively refit walking one year ahead such that the training data then includes n and the test data is n+1. RMSE is then calculated for both the training and the test datasets based on predictions for each iteration. If RMSE of the training data is significantly lower than RMSE of the test data, it indicates the model is likely overfitting. 
+We need to decide if there is enough ecological evidence to support a model with both a time-dependent slope and time-dependent intercept and whether that model has signs of overfitting. We can do this by using cross validation and comparing the root mean square error (RMSE) of a set of training data compared to test data. For time series data its important that cross validation methods retain the temporal structure of the data. To do this, we used approximate leave-future out cross validation (LFO-CV) where we fit the model to 15 years of data (training data, first year to year n-1) and predict 1 year ahead (test data, year n). The model is used to produce in-sample predictions for the training data and one-year-ahead out of sample predictions for the test data. Then the model is iteratively refit walking one year ahead such that the training data then includes n and the test data is n+1. RMSE is then calculated for both the training and the test datasets based on predictions for each iteration. If RMSE of the training data is significantly lower than RMSE of the test data, it indicates the model is likely overfitting. 
 
-We compared LFO-CV for the training and test data for both candidate models: time-varying slope and intercept, and time-varying slope only (@suppfig-lfofold). For the time-varying slope and intercept model, the RMSE of the training data was significantly lower (p < 0.05) than the RMSE of the test data (@supptab-rmse). The RMSE of the training data was lower than the RMSE for the test data for the time-varying slope model, but they were not significantly different (p > 0.05). Collectively with the residual diagnostics, we conclude that the time-varying slope model is appropriate for interpreting ecological dynamics and performs better than the model that also included a time-varying intercept (based on evidence of overfitting with this model parameterization). However, if the goal of fitting this model was prediction, it would be valuable to address the residual temporal variability that is not explained by SST and the time-varying slope. Additional predictors and considering additional extrinsic factors that may contribute to the time-varying salmon catch - SST relationship would be the next step.
+We compared LFO-CV for the training and test data for both candidate models: time-dependent slope and intercept, and time-dependent slope only (@suppfig-lfofold). For the time-dependent slope and intercept model, the RMSE of the training data was significantly lower (p < 0.05) than the RMSE of the test data (@supptab-rmse). The RMSE of the training data was lower than the RMSE for the test data for the time-dependent slope model, but they were not significantly different (p > 0.05). Collectively with the residual diagnostics, we conclude that the time-dependent slope model is appropriate for interpreting ecological dynamics and performs better than the model that also included a time-dependent intercept (based on evidence of overfitting with this model parameterization). However, if the goal of fitting this model was prediction, it would be valuable to address the residual temporal variability that is not explained by SST and the time-dependent slope. Additional predictors and considering additional extrinsic factors that may contribute to the time-dependent salmon catch - SST relationship would be the next step.
 
 ```{r echo = FALSE, include=FALSE}
 train_df_pred_TIS<-train_df |> 
@@ -379,7 +379,7 @@ t.test(pred$rmse_train3,pred$rmse_test3)
 tvintsl_lfo<-  ggplot(data=train_dat_pred,aes(x = date, y = response)) + 
   geom_point() + 
     ylim(c(-6,8))+
-  ggtitle("Time-varying slope and intercept")+
+  ggtitle("Time-dependent slope and intercept")+
   geom_line(aes(y = gam1_pred), color = "red") + 
  # facet_wrap(~model)+
   theme_classic()
@@ -387,7 +387,7 @@ tvintsl_lfo<-  ggplot(data=train_dat_pred,aes(x = date, y = response)) +
 tvsl_lfo<-  ggplot(data=train_dat_pred,aes(x = date, y = response)) + 
   geom_point() + 
     ylim(c(-6,8))+
-    ggtitle("Time-varying slope")+
+    ggtitle("Time-dependent slope")+
   geom_line(aes(y = gam2_pred), color = "red") + 
  # facet_wrap(~model)+
   theme_classic()
@@ -395,7 +395,7 @@ tvsl_lfo<-  ggplot(data=train_dat_pred,aes(x = date, y = response)) +
 sl_lfo<-  ggplot(data=train_dat_pred,aes(x = date, y = response)) + 
   geom_point() + 
   ylim(c(-6,8))+
-      ggtitle("Time-invariant slope")+
+      ggtitle("Time-independent slope")+
   geom_line(aes(y = gam3_pred), color = "red") + 
  # facet_wrap(~model)+
   theme_classic()
@@ -406,7 +406,7 @@ sl_lfo<-  ggplot(data=train_dat_pred,aes(x = date, y = response)) +
 ```{r echo = FALSE}
 #RMSE tables
 names<- c("leave-future-out train", "leave-future-out test")
-models <- c("Time-varying slope & intercept", "Time-varying slope")
+models <- c("Time-dependent slope & intercept", "Time-dependent slope")
 row1<- c(rmse_pred[1],rmse_pred[2])
 row2<- c(rmse_pred[4],rmse_pred[5])
 cv<-data.frame(rbind(round(row1,2),round(row2,2)))
@@ -443,7 +443,7 @@ dat_mat <- matrix(dat$response, nrow = 1)
 dlm_aksalmon_1 <- MARSS(dat_mat, inits = inits_list, model = mod_list,
                control = list(maxit=4000))
 
-# Fit a second model with just time-varying slope
+# Fit a second model with just time-dependent slope
 diag(Q)[1] <- 1e-10
 mod_list <- list(B = B, U = U, Q = Q, Z = Z, A = A, R = R)
 dlm_aksalmon_2 <-MARSS(dat_mat, inits = inits_list, model = mod_list,
@@ -469,13 +469,13 @@ coefs <- rbind(coef_dlm_AK1, coef_dlm_AK2)
 slope_panel <-ggplot(coefs, aes(date, slope_est, group = time_varying, fill=time_varying, col=time_varying)) + 
   geom_ribbon(aes(ymin=slope_est-2*slope_se, ymax = slope_est+2*slope_se), alpha=0.3, col = NA) + 
   geom_line(aes(lty=time_varying)) + 
-  ylab("Time-varying slope") + 
+  ylab("Time-dependent slope") + 
   xlab("") + theme_classic() + 
   ggtitle("Slope")+
   #ylim(c(-5,11))+
   facet_wrap(~ dataset, scale="free") + 
-  #scale_color_viridis_d(option="magma",begin=0.2, end=0.8, name = "Time-varying") + 
-  #scale_fill_viridis_d(option="magma",begin=0.2, end=0.8, name = "Time-varying") + 
+  #scale_color_viridis_d(option="magma",begin=0.2, end=0.8, name = "Time-dependent") + 
+  #scale_fill_viridis_d(option="magma",begin=0.2, end=0.8, name = "Time-dependent") + 
   scale_fill_manual(values=c(col[4],col[5]))+
   scale_colour_manual(values=c(col[4],col[5]))+
  # guides(fill="none",colour="none",lty="none")+
@@ -487,13 +487,13 @@ slope_panel <-ggplot(coefs, aes(date, slope_est, group = time_varying, fill=time
 int_panel <- ggplot(coefs, aes(date, int_est, group = time_varying, fill=time_varying, col=time_varying)) + 
   geom_ribbon(aes(ymin=int_est-2*int_se, ymax = int_est+2*int_se), alpha=0.3, col = NA) + 
   geom_line(aes(lty=time_varying)) + 
-  ylab("Time-varying intercept") + 
+  ylab("Time-dependent intercept") + 
   xlab("") + theme_classic() + 
   facet_wrap(~ dataset, scale="free") + 
   ggtitle("Intercept")+
   #ylim(-20,10.5)+
-  #scale_color_viridis_d(option="magma",begin=0.2, end=0.8, name = "Time-varying") + 
-  #scale_fill_viridis_d(option="magma",begin=0.2, end=0.8, name = "Time-varying") + 
+  #scale_color_viridis_d(option="magma",begin=0.2, end=0.8, name = "Time-dependent") + 
+  #scale_fill_viridis_d(option="magma",begin=0.2, end=0.8, name = "Time-dependent") + 
   scale_fill_manual(values=c(col[4],col[5]))+
   scale_colour_manual(values=c(col[4],col[5]))+
   
@@ -721,7 +721,7 @@ The relationship between salmon catch and SST anomalies before and after the 198
 int_panel_gam
 ```
 
-Time-varying intercept of the GAM model representing the relationship between SST anomalies and salmon catch.
+Time-dependent intercept of the GAM model representing the relationship between SST anomalies and salmon catch.
 :::
 
 ::: {#suppfig-tvslopegam}
@@ -729,7 +729,7 @@ Time-varying intercept of the GAM model representing the relationship between SS
 slope_panel_gam
 ```
 
-Time-varying slope of the GAM model representing the relationship between SST anomalies and salmon catch.
+Time-dependent slope of the GAM model representing the relationship between SST anomalies and salmon catch.
 :::
 
 ::: {#suppfig-gamresid}
@@ -738,7 +738,7 @@ Time-varying slope of the GAM model representing the relationship between SST an
 gamresid
 ```
 
-Time series of residuals from the GAM model fit with a time-varying slope and both a time-varying slope and intercept. p-value denotes the significance of the trend in residuals through time. 
+Time series of residuals from the GAM model fit with a time-dependent slope and both a time-dependent slope and intercept. p-value denotes the significance of the trend in residuals through time. 
 :::
 :::
 
@@ -753,7 +753,7 @@ plotQQunif(simulationOutputcr2,main = "Slope")
 par(mfrow = c(1, 1))
 ```
 
-QQ plot from the GAM model fit with a time-varying slope and both a time-varying slope and intercept.
+QQ plot from the GAM model fit with a time-dependent slope and both a time-dependent slope and intercept.
 :::
 
 
@@ -765,7 +765,7 @@ ggarrange(tvintsl_lfo,tvsl_lfo,nrow=2,ncol=1,labels=c("A.","B."))
 
 ```
 
-Leave-future-out cross validation for the GAM models fit with (A.) both a time-varying slope and intercept, (B.) a time-varying slope and and (C.).
+Leave-future-out cross validation for the GAM models fit with (A.) both a time-dependent slope and intercept, (B.) a time-dependent slope and and (C.).
 :::
 
 ::: {#suppfig-tvint}
@@ -773,7 +773,7 @@ Leave-future-out cross validation for the GAM models fit with (A.) both a time-v
 int_panel
 ```
 
-Time-varying intercept of the DLM model representing the relationship between SST anomalies and salmon catch.
+Time-dependent intercept of the DLM model representing the relationship between SST anomalies and salmon catch.
 :::
 
 ::: {#suppfig-tvslope}
@@ -781,7 +781,7 @@ Time-varying intercept of the DLM model representing the relationship between SS
 slope_panel
 ```
 
-Time-varying slope of the DLM model representing the relationship between SST anomalies and salmon catch.
+Time-dependent slope of the DLM model representing the relationship between SST anomalies and salmon catch.
 :::
 
 ::: {#suppfig-dlmresid}
@@ -790,7 +790,7 @@ Time-varying slope of the DLM model representing the relationship between SST an
 dlm_resids
 ```
 
-Time series of residuals from the DLM model fit with a time-varying slope and both a time-varying slope and intercept. p-value denotes the significance of the trend in residuals through time. 
+Time series of residuals from the DLM model fit with a time-dependent slope and both a time-dependent slope and intercept. p-value denotes the significance of the trend in residuals through time. 
 :::
 :::
 
@@ -799,7 +799,7 @@ Time series of residuals from the DLM model fit with a time-varying slope and bo
 ggarrange(dlm_qq_plot1,dlm_qq_plot2)
 ```
 
-QQ plot from the DLM model fit with a time-varying slope and both a time-varying slope and intercept.
+QQ plot from the DLM model fit with a time-dependent slope and both a time-dependent slope and intercept.
 :::
 
 {{< pagebreak >}}
@@ -827,5 +827,5 @@ Summary of the output of the best supported model (model 4)
   knitr::kable(cv)
 ```
 
-RMSE for LFO-CV for both test and training datasets for the time-varying slope and intercept, and the time-varying slope models.
+RMSE for LFO-CV for both test and training datasets for the time-dependent slope and intercept, and the time-dependent slope models.
 :::

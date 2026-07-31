@@ -22,7 +22,7 @@ crossref:
 
 ## Overview
 
-The simulation code for this comparison is in [simulations.R](https://github.com/ecosystem-state/nonstationarity-best-practices/blob/main/DLM%20simulations/simulations.R). Complete code for this file can be found [here](https://github.com/ecosystem-state/nonstationarity-best-practices/blob/main/DLM%20simulations/Appendix4_DLMsimulations.qmd). As a brief overview, we are interested in understanding what factors of a DLM contribute to models with time-varying slopes not performing well - specifically, we found with the GoA salmon dataset that fitting both a time-varying slope and a time-varying intercept had convergence issues. All of these models are constructed using the `MARSS` R package, and we are only considering models with time-varying intercepts and slopes here.
+The simulation code for this comparison is in [simulations.R](https://github.com/ecosystem-state/nonstationarity-best-practices/blob/main/DLM%20simulations/simulations.R). Complete code for this file can be found [here](https://github.com/ecosystem-state/nonstationarity-best-practices/blob/main/DLM%20simulations/Appendix4_DLMsimulations.qmd). As a brief overview, we are interested in understanding what factors of a DLM contribute to models with time-dependent slopes not performing well - specifically, we found with the GoA salmon dataset that fitting both a time-dependent slope and a time-dependent intercept had convergence issues. All of these models are constructed using the `MARSS` R package, and we are only considering models with time-dependent intercepts and slopes here.
 
 #### Parameters
 
@@ -46,13 +46,13 @@ We investigated the following time series properties in these simulations:
 
 For each combination of parameters above, we generated 200 simulated time series (using fixed random number seeds). Random walks in the intercept, slope, and covariate time series were all simulated independently, and then combined to generate a latent response time series. Finally, measurement error was added to create observed time series.
 
-For each simulated dataset, we used the `MARSS` package in R; for fast fitting we used the `TMB` estimation (method = "marssTMB"). We generated a number of summary statistics; because we are focused here on the ability to recover trends in the slope parameters, we focus here on the correlation between the estimated time-varying slope trend and true time-varying slope trend.
+For each simulated dataset, we used the `MARSS` package in R; for fast fitting we used the `TMB` estimation (method = "marssTMB"). We generated a number of summary statistics; because we are focused here on the ability to recover trends in the slope parameters, we focus here on the correlation between the estimated time-dependent slope trend and true time-dependent slope trend.
 
 ## Results
 
 Our results highlight that two parameters in our simulations are largely responsible for cases when DLMs are not able to recover underlying processes: time series length, and ratio of variability in the intercept versus slope.
 
-Each facet here represents a different standard deviation of the random walk in the slope; as we fixed the standard deviation of the intercept random walk at 0.1, the standard deviation in the right facet represents a case where most of the variability is driven by variability in the slope (@suppfig-length). In contrast the leftmost facet represents a scenario where variability is dominated by the intercept. The results highlight that recovering a time-varying slope trend is very difficult in time series dominated by variability in the intercept, even when time series are long. More data (longer time series) generally increases the ability to recover trends in all cases, regardless of whether variability is dominated by the intercept or slope.
+Each facet here represents a different standard deviation of the random walk in the slope; as we fixed the standard deviation of the intercept random walk at 0.1, the standard deviation in the right facet represents a case where most of the variability is driven by variability in the slope (@suppfig-length). In contrast the leftmost facet represents a scenario where variability is dominated by the intercept. The results highlight that recovering a time-dependent slope trend is very difficult in time series dominated by variability in the intercept, even when time series are long. More data (longer time series) generally increases the ability to recover trends in all cases, regardless of whether variability is dominated by the intercept or slope.
 
 ```{r, message=FALSE, warning=FALSE, echo=FALSE}
 library(ggplot2)
