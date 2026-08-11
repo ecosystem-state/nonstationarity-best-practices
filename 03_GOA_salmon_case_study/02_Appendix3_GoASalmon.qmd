@@ -395,7 +395,7 @@ tvsl_lfo<-  ggplot(data=train_dat_pred,aes(x = date, y = response)) +
 sl_lfo<-  ggplot(data=train_dat_pred,aes(x = date, y = response)) + 
   geom_point() + 
   ylim(c(-6,8))+
-      ggtitle("Time-independent slope")+
+      ggtitle("Time-invariant slope")+
   geom_line(aes(y = gam3_pred), color = "red") + 
  # facet_wrap(~model)+
   theme_classic()

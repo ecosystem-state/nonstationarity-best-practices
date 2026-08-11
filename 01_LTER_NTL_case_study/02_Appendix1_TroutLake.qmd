@@ -740,8 +740,8 @@ TT <- nrow(full_data)
 B <- diag(m) ## 2x2; Identity
 U <- matrix(0, nrow = m, ncol = 1) ## 2x1; both elements = 0
 Q <- matrix(list(0), m, m) ## 2x2; all 0 for now
-diag(Q)[1] <- 0.0000001
-diag(Q)[2] <- c("q.beta")
+diag(Q)[1] <- c("q.alpha")
+diag(Q)[2] <- 0.0000001
 #diag(Q) <- c("q.alpha", "q.beta") ## 2x2; diag = (q1,q2)
 Z <- array(NA, c(1, m, TT)) ## NxMxT; empty for now
 Z[1, 1, ] <- rep(1, TT) ## Nx1; 1's for intercept
@@ -768,9 +768,9 @@ full_data$int_se <- dlm_1$states.se[1,]
 
 full_data$slope_est <- dlm_1$states[2,]
 full_data$slope_se <- dlm_1$states.se[2,]
-dlm_plot<-ggplot(full_data, aes(year4, slope_est)) +
-geom_ribbon(aes(ymin=slope_est-2*slope_se, ymax = slope_est+2*slope_se), alpha=0.6) +
-geom_line() + ylab("Time-dependent slope") + xlab("Year") + theme_classic()
+dlm_plot<-ggplot(full_data, aes(year4, int_est)) +
+geom_ribbon(aes(ymin=int_est-2*int_se, ymax = int_est+2*int_se), alpha=0.6) +
+geom_line() + ylab("Time-dependent intercept") + xlab("Year") + theme_classic()
 ```
 
 ```{r, echo=FALSE}
@@ -886,6 +886,7 @@ Estimates of the intercept of the relationship based on a time-dependent LM (blu
 #| warning: false
 dlm_plot
 ```
+Estimates of the intercept of the relationship based on a time-dependent DLM
 :::
 
 ::: {#suppfig-dlmFit}
@@ -895,6 +896,8 @@ dlm_plot
 #| warning: false
 dlmFit
 ```
+
+Predicted values of water clarity (black line) compared to observed values (red points) using a time-dependent relationship with zooplankton abundance fit with a DLM
 :::
 
 ::: {#supptab-AIC}
