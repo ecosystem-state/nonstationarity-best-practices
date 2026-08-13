@@ -250,6 +250,8 @@ annotate_figure(Fig4, bottom = textGrob("Year", gp = gpar(cex = 1)))
 
 ggsave("Figure_4_dlmgam_comparison.png", height = 7, width = 11)
 
+ggsave("Figure_5_dlmgam_comparison.pdf", height = 7, width = 11)
+
 #ggsave("Figure_2_dlmgam_comparison.png", height = 7, width = 7)
 ```
 

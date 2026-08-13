@@ -9,6 +9,7 @@ library(marssTMB)
 library(tidyverse)
 library(strucchange)
 library(data.table)
+library(ggpubr)
 
 
 ## Salmon Data ##
@@ -143,3 +144,5 @@ LTER
 
 ggarrange(LTER, lakeWA, GoA_TS, labels=c("A.", "B.", "C."), nrow=3)
 ggsave("Figures/Figure_2_timeseries.png", height = 8, width = 7)
+ggarrange(LTER, lakeWA, GoA_TS, labels=c("A.", "B.", "C."), nrow=3)
+ggsave("Figures/Figure_2_timeseries.pdf", height = 8, width = 7)

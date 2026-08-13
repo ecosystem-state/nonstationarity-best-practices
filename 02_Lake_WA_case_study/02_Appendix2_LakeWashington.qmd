@@ -535,6 +535,7 @@ final_plot <- (pA + pB + pC + pD + pE) +
 
 # Save the combined figure
 ggsave(final_plotv2, filename="gam_comparison_gridv2.png", height = 8, width = 10, bg="white")
+ggsave(final_plotv2, filename="Figure4_gam_comparison_gridv2.pdf", height = 8, width = 10, bg="white")
 ```
 
 It is important to also examine the residuals from these models. For example, we can look at the residuals for the GAMs fit to the Lake Washington data. In looking across models, those that do not include time-dependent parameters show evidence of a persistent trend in the residuals that is not accounted for by the model (@suppfig-gamresid) despite the q-q plot being reasonable for all model specifications (@suppfig-gamqq). 
