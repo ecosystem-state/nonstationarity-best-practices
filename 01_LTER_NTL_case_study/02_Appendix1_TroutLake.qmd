@@ -89,24 +89,22 @@ dataset_names <- list(
   'mean_chl_scale'="Chlorophyll",
   'Large_scale'="Large Zooplankton"
 )
+dataset_names <- data.frame(Dataset=c('mean_sec_scale','mean_totpuf_scale', 'mean_chl_scale','Large_scale'),
+  Data=c("Water Clarity","Total Phosphorus","Chlorophyll","Large Zooplankton"))
+ 
+analysis_long2<-analysis_long%>%left_join(dataset_names)
 
-dataset_names <- c(
-  "Water Clarity",
- "Total Phosphorus",
-  "Chlorophyll",
-  "Large Zooplankton"
-)
 facet_labeller <- function(variable,value){
   return(dataset_names[value])
 }
-ts <- ggplot(data=analysis_long%>%
+ts <- ggplot(data=analysis_long2%>%
          filter(Dataset=="mean_sec_scale"|Dataset=="mean_totpuf_scale"|
-                 Dataset=="mean_chl_scale"| Dataset=="Large_scale"), aes(y=values, x=year4, group=Dataset, col=Dataset)) +
-  facet_wrap(~Dataset,nrow=2,labeller = as_labeller(dataset_names)) +
+                 Dataset=="mean_chl_scale"| Dataset=="Large_scale"), aes(y=values, x=year4, group=Data, col=Data)) +
+  facet_wrap(~Data,nrow=2) +
   geom_hline(yintercept=0)+
   geom_point()+
   geom_line()+
-  scale_colour_discrete(labels=facet_labeller)+
+  scale_colour_discrete()+
   geom_vline(xintercept=2007, lty=2)+
   geom_vline(xintercept=2014, lty=2)+
   xlab("Year")+
@@ -584,7 +582,7 @@ panel_c <- ggplot(results_window, aes(x=last_year, y=as.factor(window), fill= Sl
                        high = col[3], midpoint =0)+
     geom_text(
     aes(label = slope_significance),
-    color = "black",
+    color = "black",alpha=0.2,size=5,
     size = 8,
     vjust = 0.75 # Centers the asterisk vertically
   )+
@@ -601,7 +599,7 @@ panel_d<-rw_intercept <- ggplot(results_window, aes(x=last_year, y=as.factor(win
                        high = col[3], midpoint =5.25)+
     geom_text(
     aes(label = intercept_significance),
-    color = "black",
+    color = "black",alpha=0.2,size=5, 
     size = 8,
     vjust = 0.75 # Centers the asterisk vertically
   )+
