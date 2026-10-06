@@ -4,16 +4,15 @@ This folder contains data and code that supports Appendix 4: DLM Simulations. Th
 
 **Scripts**
 
-Script: simulation.R
-This script simulates two random walk datasets simulation_pars.rds and simulation_pars_ar1.rds. simulation_pars.rds is used to generate Appendix 4 
+File: simulation.R
+Description: This script simulates two random walk datasets simulation_pars.rds and simulation_pars_ar1.rds. simulation_pars.rds is used to generate Appendix 4 
 
-Script: Appendix4_DLMsimulations.qmd
-This script produces all figures, tables, and scripts in Appendix 4 using simulation_pars.rds.
+File: Appendix4_DLMsimulations.qmd
+Description: This script produces all figures, tables, and scripts in Appendix 4 using simulation_pars.rds.
 
 **Data Files**
 
 File: simulation_pars.rds & simulation_pars_ar1.rds
-
 Description: Simulated time series data representing white noise (simulation_pars.rds) and first-order autoregressive (simulation_pars_ar1.rds) time series processes.
 
 *Variables*
