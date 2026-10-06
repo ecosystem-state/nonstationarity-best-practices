@@ -1,6 +1,6 @@
 # 01_LTER_NTL_case_study
 
-This folder contains data and code that supports Appendix 1: Trout Lake and all associated data processing and figure production used in the main text. 
+This folder contains data and code that supports Appendix 1: Trout Lake and all associated data processing, analyses, and figure production used in the main text that applies to the Trout Lake case study.
 
 **Scripts**
 
