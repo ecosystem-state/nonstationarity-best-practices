@@ -1,0 +1,3 @@
+# 03_GOA_salmon_case_study
+
+This folder contains data and code that supports the Gulf of Alaska salmon case study in "Time-varying relationships in ecological modeling". The data folder contains the processed and raw data files. **NOTE** the raw SST data that is processed from the process.SST.R script is too large for github and the .nc is not containted on this repository. Two quarto files produce the results included in this analysis "01_temporalGAMs_LMs_GOAsalmon.qmd" representing the exploratory and preliminary analyses and "02_Appendix3_GoASalmon.qmd" which contains the final analyses contained in this work. 
