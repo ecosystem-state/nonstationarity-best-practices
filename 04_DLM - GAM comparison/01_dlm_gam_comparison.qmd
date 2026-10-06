@@ -1,10 +1,10 @@
 ---
-title: "Appendix 4: DLMs and GAMs for Lake Washington data"
+title: "DLMs and GAMs for comparison"
 format: pdf
 editor: visual
 ---
 
-# Appendix 4: DLMs and GAMs for Lake Washington data
+# DLMs and GAMs for comparison
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(
@@ -248,7 +248,7 @@ Fig4<-ggarrange(slope_panel,int_panel, nrow=1,ncol=2, widths=c(1,1.25))
 annotate_figure(Fig4, bottom = textGrob("Year", gp = gpar(cex = 1)))
 
 
-ggsave("Figure_4_dlmgam_comparison.png", height = 7, width = 11)
+ggsave("Figure_5_dlmgam_comparison.png", height = 7, width = 11)
 
 ggsave("Figure_5_dlmgam_comparison.pdf", height = 7, width = 11)
 
