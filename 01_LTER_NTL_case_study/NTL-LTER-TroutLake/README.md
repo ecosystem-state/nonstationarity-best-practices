@@ -2,6 +2,8 @@
 
 Data files accessed from accessed at [North Temperate Lakes Long-Term Ecological Research](https://lter.limnology.wisc.edu/core-datasets/). Each individual dataset and its associated citation and DOI are provided below. Additional metadata and dataset descriptions can be found at the original sources. NOTE: only NTL_LTER_TroutLake_Secchi.csv and NTL_LTER_TroutLake_Zooplankton.csv were used in this analysis.
 
+**North Temperate Lakes LTER Datasets**
+
 NTL_LTER_TroutLake_Secchi.csv: Magnuson, J.J., S.R. Carpenter, and E.H. Stanley. 2026. North Temperate Lakes LTER: Secchi Disk Depth; Other Auxiliary Base Crew Sample Data 1981 - current ver 34. Environmental Data Initiative. [https://doi.org/10.6073/pasta/c85ded1d123a76125690a3d14f773d7a](https://doi.org/10.6073/pasta/c85ded1d123a76125690a3d14f773d7a) (Accessed 2024-07-30).
 
 NTL_LTER_TroutLake_Chemistry.csv: Magnuson, J.J., S.R. Carpenter, and E.H. Stanley. 2026. North Temperate Lakes LTER: Chemical Limnology of Primary Study Lakes: Nutrients, pH and Carbon 1981 - current ver 65. Environmental Data Initiative. [https://doi.org/10.6073/pasta/ffa652bb3cb1a2c82c674c3e5354a5b2](https://doi.org/10.6073/pasta/ffa652bb3cb1a2c82c674c3e5354a5b2) (Accessed 2024-08-27).
