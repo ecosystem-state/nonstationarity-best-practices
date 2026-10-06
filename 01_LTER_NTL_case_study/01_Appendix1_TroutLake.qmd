@@ -715,9 +715,9 @@ top_row<-annotate_figure(top_row, bottom = text_grob("Year"))
 bottom_row<-ggarrange(panel_d,panel_c, labels=c("D.", "E."), nrow=1,ncol=2)
 bottom_row<-annotate_figure(bottom_row, bottom = text_grob("Last Year of Time Period"))
 ggarrange(top_row, bottom_row, nrow=2, heights=c(1.5,1))
-ggsave("Figure_2_lmgam_comparisonv2.png", height = 7, width = 11,bg="white")
+ggsave("Figure_3_lmgam_comparisonv2.png", height = 7, width = 11,bg="white")
 
-pdf(file = "Figure1.pdf",   # The directory you want to save the file in
+pdf(file = "Figure3.pdf",   # The directory you want to save the file in
     width = 11, # The width of the plot in inches
     height = 8) # The height of the plot in inches
 
