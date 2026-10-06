@@ -22,7 +22,7 @@ NTL_LTER_TroutLake_FishDensity.csv: Magnuson, J., S. Carpenter, and E. Stanley. 
 
 NTL_LTER_TroutLake_Zooplankton.csv: NTL LTER, E.H. Stanley, S.R. Carpenter, and J.J. Magnuson. 2026. North Temperate Lakes LTER: Zooplankton - Trout Lake Area 1982 - current ver 42. Environmental Data Initiative. [https://doi.org/10.6073/pasta/dc0439ba67f250d4e9b7b2f7f49c51c7](https://doi.org/10.6073/pasta/dc0439ba67f250d4e9b7b2f7f49c51c7) (Accessed 2024-07-30).
 
-**Data Files**
+**Additional Data Files**
 
 File: zoopsCODE.csv
 
