@@ -884,6 +884,7 @@ Estimates of the intercept of the relationship based on a time-dependent LM (blu
 #| warning: false
 dlm_plot
 ```
+
 Estimates of the intercept of the relationship based on a time-dependent DLM
 :::
 
