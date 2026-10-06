@@ -534,11 +534,11 @@ final_plot <- (pA + pB + pC + pD + pE) +
   theme(plot.tag.position = c(0.01, 0.98))
 
 # Save the combined figure
-ggsave(final_plotv2, filename="gam_comparison_gridv2.png", height = 8, width = 10, bg="white")
+ggsave(final_plotv2, filename="Figure4_gam_comparison_gridv2.png", height = 8, width = 10, bg="white")
 ggsave(final_plotv2, filename="Figure4_gam_comparison_gridv2.pdf", height = 8, width = 10, bg="white")
 ```
 
-It is important to also examine the residuals from these models. For example, we can look at the residuals for the GAMs fit to the Lake Washington data. In looking across models, those that do not include time-dependent parameters show evidence of a persistent trend in the residuals that is not accounted for by the model (@suppfig-gamresid) despite the q-q plot being reasonable for all model specifications (@suppfig-gamqq). 
+It is important to also examine the residuals from these models. For example, we can look at the residuals for the GAMs fit to the Lake Washington data. In looking across models, those that do not include time-dependent parameters show evidence of a persistent trend in the residuals that is not accounted for by the model (@suppfig-gamresid) despite the q-q plot being reasonable for all model specifications (@suppfig-gamqq).
 
 ```{r, include=FALSE}
 p_values<-data.frame(p_value=c(summary(gam(resid(gam_cr1)~s(dat$n_date)))$s.pv,
@@ -867,7 +867,7 @@ Fit of the GAM models (lines) to observed bluegreen algae (cyanobacteria) abunda
 gam_resid
 ```
 
-Time series of residuals from the five GAM models where residuals from models that do not have a temporally structured smooth term (s(Phos) and s(Phos, by = date)) have a trend through time. p-value denotes the significance of the trend in residuals through time. 
+Time series of residuals from the five GAM models where residuals from models that do not have a temporally structured smooth term (s(Phos) and s(Phos, by = date)) have a trend through time. p-value denotes the significance of the trend in residuals through time.
 :::
 
 ::: {#suppfig-gamqq}
