@@ -1,24 +1,44 @@
 ---
 title: "Appendix 3: Gulf of Alaska salmon analysis"
-format: pdf
+subtitle: "To accompany: Nonstationary relationships in ecological modeling"
+author:
+  - Megan L. Feddern
+  - Michael A. Litzow
+  - Eric J. Ward
+  - Emily R. Ryznar
+  - Mary E. Hunsicker
+  - Erin V. Satterthwaite
+  - Catarina Wor
+  - Sean C. Anderson
+  - William H. Satterthwaite
+  - Michael J. Malick
+  - Dan A. Greenberg
+  - Michael G. Jacox
+  - Brendan M. Connors
+format: 
+ pdf:
+    toc: true
+    toc-depth: 3
 editor: source
 crossref:
   custom:
     - kind: float
       key: suppfig
       latex-env: suppfig
-      reference-prefix: Figure S3.
+      reference-prefix: Figure S
       space-before-numbering: false
       latex-list-of-description: Supplementary Figure
     - kind: float
       key: supptab
       latex-env: supptab
-      reference-prefix: Table S3.
+      reference-prefix: Table S
       space-before-numbering: false
       latex-list-of-description: Supplementary Table
 ---
 
-# Appendix 3: Gulf of Alaska salmon analysis
+\break
+
+## Overview
 
 ```{r setup, include = FALSE}
 
@@ -151,7 +171,7 @@ Next, we consider generalized additive models. We fit two distinct GAM models to
 Next, we check the residuals plots for both parameterizations of the models. The time-dependent slope model appears to have some residual temporally variability while there are no trends through time in the model with both a time-dependent slope and a time-dependent intercept (@suppfig-gamresid) and the qq-pot looks reasonable for both (@suppfig-gamqq).
 
 ```{r,include=FALSE}
-dat_aksalmon <- readRDS("../03_GOA_salmon_case_study/data_for_AK_salmon_example.rds")
+dat_aksalmon <- readRDS("../03_GOA_salmon_case_study/Data/data_for_AK_salmon_example.rds")
 col<-paletteer_d("nationalparkcolors::Everglades")
 #renaming
 dat_aksalmon <- dplyr::rename(dat_aksalmon,

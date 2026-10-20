@@ -1,24 +1,44 @@
 ---
 title: "Appendix 2: Lake Washington Analysis"
-format: pdf
+format: 
+ pdf:
+    toc: true
+    toc-depth: 3
+subtitle: "To accompany: Nonstationary relationships in ecological modeling"
+author:
+  - Megan L. Feddern
+  - Michael A. Litzow
+  - Eric J. Ward
+  - Emily R. Ryznar
+  - Mary E. Hunsicker
+  - Erin V. Satterthwaite
+  - Catarina Wor
+  - Sean C. Anderson
+  - William H. Satterthwaite
+  - Michael J. Malick
+  - Dan A. Greenberg
+  - Michael G. Jacox
+  - Brendan M. Connors
 editor: visual
 crossref:
   custom:
     - kind: float
       key: suppfig
       latex-env: suppfig
-      reference-prefix: Figure S2.
+      reference-prefix: Figure S
       space-before-numbering: false
       latex-list-of-description: Supplementary Figure
     - kind: float
       key: supptab
       latex-env: supptab
-      reference-prefix: Table S2.
+      reference-prefix: Table S
       space-before-numbering: false
       latex-list-of-description: Supplementary Table
 ---
 
-# Appendix 2: Lake Washington Analysis
+\break
+
+## Overview
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(
