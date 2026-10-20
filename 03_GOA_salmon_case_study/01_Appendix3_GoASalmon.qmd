@@ -1,6 +1,6 @@
 ---
 title: "Appendix 3: Gulf of Alaska salmon analysis"
-subtitle: "To accompany: Nonstationary relationships in ecological modeling"
+subtitle: "Supporting Information For: Nonstationary relationships in ecological modeling"
 author:
   - Megan L. Feddern
   - Michael A. Litzow

@@ -4,7 +4,7 @@ format:
  pdf:
     toc: true
     toc-depth: 3
-subtitle: "To accompany: Nonstationary relationships in ecological modeling"
+subtitle: "Supporting Information For: Nonstationary relationships in ecological modeling"
 author:
   - Megan L. Feddern
   - Michael A. Litzow

@@ -248,9 +248,6 @@ Fig4<-ggarrange(slope_panel,int_panel, nrow=1,ncol=2, widths=c(1,1.25))
 annotate_figure(Fig4, bottom = textGrob("Year", gp = gpar(cex = 1)))
 
 
-ggsave("Figure_5_dlmgam_comparison.png", height = 6, width = 9.5)
-
-ggsave("Figure_5_dlmgam_comparison.pdf", height = 6, width = 9.5)
 
 #ggsave("Figure_2_dlmgam_comparison.png", height = 7, width = 7)
 ```
@@ -408,7 +405,7 @@ coefs<-coefs%>%mutate(year=as.numeric(format(date, "%Y")))
 annotateGoA<-data.frame(label=c("High AL \n  Variability",
                                 "Low AL \n Variability",
                                 "Marine \n HW"),
-                        date=c(1975, 2000,2019),
+                        date=c(1975, 2000,2023),
                         y=c(10,10,10), Anomalies=c("z_sst","z_sst","z_sst"))
 
 
@@ -424,7 +421,7 @@ panel_a<-ggplot(coefs%>%filter(dataset=="Alaska salmon : DLM"), aes(x=year, y=in
   ggtitle("DLM")+
   xlab("") + theme_classic() + 
   ylim(-16,11)+
-  #xlim(1965,2030)+
+  xlim(1965,2030)+
   geom_vline(xintercept=c(1989,2014), lty=c(2,2),col='grey')+
   geom_text(data=annotateGoA, aes(x = date, y = y, 
                                   label = label),  
@@ -443,6 +440,7 @@ panel_a<-ggplot(coefs%>%filter(dataset=="Alaska salmon : DLM"), aes(x=year, y=in
 
 panel_e<-ggplot(coefs%>%filter(dataset=="Alaska salmon : DLM"), aes(year, slope_est, group = time_varying, fill=time_varying, col=time_varying)) + 
   geom_ribbon(aes(ymin=slope_est-2*slope_se, ymax = slope_est+2*slope_se), alpha=0.3, col = NA) + 
+  xlim(1965,2030)+
   geom_line(aes(lty=time_varying)) + 
   ylab("Slope Estimate") + 
   xlab("") + theme_classic() +
@@ -462,7 +460,7 @@ panel_f<-ggplot(coefs%>%filter(dataset=="Alaska salmon : GAM"), aes(year, slope_
   geom_line(aes(lty=time_varying)) + 
   ylab("") + 
   geom_vline(xintercept=c(1989,2014), lty=c(2,2),col='grey')+
-
+xlim(1965,2030)+
   xlab("") + theme_classic() +
   ylim(c(-3.5,11))+
   scale_fill_manual(values=c(col[4],col[5]))+
@@ -532,6 +530,7 @@ panel_b<-ggplot(coefs%>%filter(dataset=="Alaska salmon : GAM"), aes(year, int_es
   xlab("") + theme_classic() + 
   ylim(-16,11)+
   ggtitle("GAM")+
+  xlim(1965,2030)+
   scale_fill_manual(values=c(col[4],col[5]))+
   scale_colour_manual(values=c(col[4],col[5]))+
   guides(fill="none",colour="none",lty="none")+
@@ -644,7 +643,10 @@ ggarrange(fig_left,fig_right, nrow=1,ncol=2)%>%
   annotate_figure(bottom = textGrob("Year",gp = gpar(cex =1)))%>%
   ggarrange(legend, nrow=2,ncol=1, heights=c(10,1))
 
-ggsave("Figure_4_dlmgam_comparison.png", height = 5, width = 11, bg = "white")
+ggsave("Figure_5_dlmgam_comparison.png", height = 4.75, width = 7, bg = "white")
+
+ggsave("Figure_5_dlmgam_comparison.pdf", height = 4.75, width = 7)
+
 
 
 ```
