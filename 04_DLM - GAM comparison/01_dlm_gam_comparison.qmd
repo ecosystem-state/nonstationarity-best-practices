@@ -516,7 +516,7 @@ fig_slope=ggarrange(panel_e, panel_f, panel_g,panel_h, nrow=1,ncol=4,
                     labels = c("E.", "F.", "G.", "H."))
 
 
-fig_slope_y<-annotate_figure(fig_slope, left = textGrob("Time-varying slope",rot=90,gp = gpar(cex = 1)))
+fig_slope_y<-annotate_figure(fig_slope, left = textGrob("Time-dependent slope",rot=90,gp = gpar(cex = 1)))
 
 
 
@@ -614,7 +614,7 @@ panel_z<-ggplot(coefs%>%filter(dataset=="Lake Washington : GAM"), aes(date, int_
   guides(fill="none")+
   scale_fill_manual(values=c(col[4],col[5]))+
   scale_colour_manual(values=c(col[4],col[5]))+
-  labs(colour = "Time-Varying Parameter(s)", lty="Time-Varying Parameter(s)")+
+  labs(colour = "Time-Dependent Parameter(s)", lty="Time-Dependent Parameter(s)")+
   theme(
     strip.background = element_rect(fill = "white"),
     plot.title = element_text(hjust = 0.5),
@@ -643,9 +643,9 @@ ggarrange(fig_left,fig_right, nrow=1,ncol=2)%>%
   annotate_figure(bottom = textGrob("Year",gp = gpar(cex =1)))%>%
   ggarrange(legend, nrow=2,ncol=1, heights=c(10,1))
 
-ggsave("Figure_5_dlmgam_comparison.png", height = 4.75, width = 7, bg = "white")
+ggsave("Figure_5_dlmgam_comparison.png", height = 5.5, width = 8, bg = "white")
 
-ggsave("Figure_5_dlmgam_comparison.pdf", height = 4.75, width = 7)
+ggsave("Figure_5_dlmgam_comparison.pdf", height = 5.5, width = 8)
 
 
 
